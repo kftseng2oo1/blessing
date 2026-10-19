@@ -10,7 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="齊聲祝福">
 <title>齊聲祝福</title>
 <link rel="manifest" id="mf">
-<link rel="apple-touch-icon" id="ati">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <style>
 :root{--bg:#f6efe4;--card:#fffaf2;--ink:#3b2f2a;--sub:#8a7a6e;--line:#e7dccb;--accent:#d9603b;--rec:#e0413a;--sky:#2f7fb8;color-scheme:light}
 *{box-sizing:border-box}
@@ -662,11 +664,11 @@ ACT.shareFile=async()=>{
   else toast('此裝置無法直接分享，請用「下載檔案」');
 };
 
-/* ---------- PWA 圖示 / manifest ---------- */
-(function(){try{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');
-  g.fillStyle='#d9603b';g.fillRect(0,0,512,512);g.font='300px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🎙️',256,280);
-  const icon=c.toDataURL('image/png');$('ati').href=icon;
-  const mf={name:'齊聲祝福',short_name:'齊聲祝福',start_url:location.href.split(/[?#]/)[0],display:'standalone',background_color:'#f6efe4',theme_color:'#f6efe4',icons:[{src:icon,sizes:'512x512',type:'image/png'}]};
+/* ---------- PWA manifest（圖示用絕對網址，blob manifest 才找得到） ---------- */
+(function(){try{
+  const abs=f=>new URL(f,location.href.split(/[?#]/)[0]).href;
+  const mf={name:'齊聲祝福',short_name:'齊聲祝福',start_url:location.href.split(/[?#]/)[0],display:'standalone',background_color:'#f6efe4',theme_color:'#f6efe4',
+    icons:[{src:abs('icon-192.png'),sizes:'192x192',type:'image/png'},{src:abs('icon-512.png'),sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
   $('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}))}catch(e){}})();
 
 openDB().then(d=>{db=d;return loadAlbums()})
