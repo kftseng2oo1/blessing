@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6efe4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="齊聲祝福">
+<title>齊聲祝福</title>
+<link rel="manifest" id="mf">
+<link rel="apple-touch-icon" id="ati">
+<style>
+:root{--bg:#f6efe4;--card:#fffaf2;--ink:#3b2f2a;--sub:#8a7a6e;--line:#e7dccb;--accent:#d9603b;--rec:#e0413a;--sky:#2f7fb8;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{min-height:100vh;padding:env(safe-area-inset-top) 0 calc(96px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.4;cursor:default}
+input,textarea{font:inherit;color:var(--ink);width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:none;min-height:64px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+h1{font-size:28px;margin:22px 0 4px;letter-spacing:2px}
+.sub{color:var(--sub);margin:0 0 18px;font-size:14px;line-height:1.6}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;gap:14px;align-items:center;margin-bottom:12px;width:100%;text-align:left}
+.thumb{width:62px;height:62px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:30px;background-size:cover;background-position:center}
+.card b{display:block;font-size:17px;margin-bottom:4px}
+.card small{color:var(--sub);font-size:13px}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:9px;background:#e3eef7;color:var(--sky);margin-left:6px;vertical-align:2px;font-weight:600}
+.empty{text-align:center;padding:40px 20px;color:var(--sub);line-height:1.8}
+.empty .big{font-size:56px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--accent);color:#fff;padding:15px 26px;border-radius:30px;font-size:17px;font-weight:600;box-shadow:0 6px 18px rgba(217,96,59,.35);white-space:nowrap;z-index:5}
+.hero{border-radius:0 0 26px 26px;padding:14px 16px 22px;color:#fff;position:relative;background-size:cover;background-position:center;margin-bottom:14px}
+.hero::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.5))}
+.hero>*{position:relative}
+.hero .row{display:flex;justify-content:space-between;align-items:center}
+.hero .row div{display:flex;gap:8px}
+.ib{width:40px;height:40px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;font-size:18px;display:grid;place-items:center}
+.hero h2{margin:26px 0 6px;font-size:26px;line-height:1.3}
+.hero p{margin:0;opacity:.92;font-size:14px}
+.acts{display:flex;gap:10px;margin-bottom:12px}
+.btn{flex:1;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:15px}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.sky{background:var(--sky);color:#fff;border-color:var(--sky)}
+.btn.wide{display:block;width:100%;margin-bottom:12px}
+.banner{background:#fff7e8;border:1px solid #f0dcb8;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;margin-bottom:12px}
+.clip{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.av{width:44px;height:44px;border-radius:22px;flex:none;color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px}
+.clip .mid{flex:1;min-width:0}
+.clip .mid b{display:block}
+.clip .mid small{color:var(--sub);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pend{color:var(--accent)}
+.mini{width:34px;height:34px;border-radius:17px;color:var(--sub);font-size:15px;display:grid;place-items:center;flex:none}
+.mini.play{background:var(--ink);color:#fff}
+.sec{color:var(--sub);font-size:13px;margin:8px 2px 10px;display:flex;justify-content:space-between}
+.sheet,.dlg{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet.hidden,.dlg.hidden,.player.hidden{display:none}
+.sheet-bg{position:absolute;inset:0;background:rgba(40,30,25,.45)}
+.sheet-body{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0;padding:18px 16px calc(22px + env(safe-area-inset-bottom))}
+.sheet h3{margin:4px 0 14px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+.x{width:34px;height:34px;border-radius:17px;background:var(--line);font-size:15px}
+label.l{display:block;font-size:13px;color:var(--sub);margin:14px 2px 6px}
+.occs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.occ{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;font-size:13px}
+.occ span{display:block;font-size:24px;margin-bottom:2px}
+.occ.on{border-color:var(--accent);background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:7px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);font-size:14px}
+.tips .chip{background:#fff7e8}
+.photo{display:flex;gap:12px;align-items:center}
+.photo .pv{width:64px;height:64px;border-radius:12px;background:var(--line) center/cover;flex:none}
+.save{display:block;width:100%;margin-top:14px;padding:15px;border-radius:14px;background:var(--accent);color:#fff;font-weight:700;font-size:17px;text-align:center;text-decoration:none}
+.save.dark{background:var(--ink)}
+.save.red{background:#b33}
+.save.ghost{background:var(--line);color:var(--ink)}
+.recbox{text-align:center;padding:18px 0 6px}
+.recbtn{width:96px;height:96px;border-radius:48px;background:var(--rec);color:#fff;font-size:15px;font-weight:700;transition:box-shadow .08s}
+.recbtn.on{border-radius:28px}
+.rtime{font-size:30px;font-variant-numeric:tabular-nums;margin-top:12px;font-weight:600}
+.rhint{color:var(--sub);font-size:13px;margin-top:4px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:14px;color:var(--ink);line-height:1.5}
+.chk input{width:auto;flex:none}
+.row2{display:flex;gap:10px;margin-top:14px}
+.row2 button{flex:1;padding:14px;border-radius:14px;font-weight:700}
+audio.pv{width:100%;margin-top:12px}
+.linkbox{background:#fff;border:1px dashed var(--line);border-radius:12px;padding:12px;font-size:13px;word-break:break-all;color:var(--sub);user-select:all;-webkit-user-select:all}
+details.own{margin-top:18px;font-size:14px}
+details.own summary{color:var(--sub);cursor:pointer}
+.player{position:fixed;inset:0;z-index:30;color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;background-size:cover;background-position:center}
+.player::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.player>*{position:relative}
+.pclose{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;width:42px;height:42px;border-radius:21px;background:rgba(255,255,255,.2);color:#fff;font-size:18px}
+.pocc{font-size:64px}
+.ptitle{font-size:20px;opacity:.9;margin-top:6px}
+.pwho{font-size:44px;font-weight:800;margin:36px 0 10px;min-height:54px;letter-spacing:2px}
+.pnote{font-size:20px;line-height:1.6;max-width:480px;min-height:32px;opacity:.95}
+.pbar{width:min(80vw,420px);height:6px;background:rgba(255,255,255,.3);border-radius:3px;margin:32px auto 14px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:#fff}
+.pdots{font-size:14px;opacity:.85}
+.pctrl{display:flex;gap:22px;justify-content:center;margin-top:26px}
+.pctrl button{width:60px;height:60px;border-radius:30px;background:rgba(255,255,255,.22);color:#fff;font-size:22px}
+.pctrl button.pp{width:74px;height:74px;border-radius:37px;background:#fff;color:#333;font-size:26px}
+.dlg{z-index:40;align-items:center;background:rgba(40,30,25,.45);padding:24px}
+.dlg-box{background:var(--bg);border-radius:18px;padding:20px;width:100%;max-width:340px}
+.dlg-box p{margin:0 0 18px;line-height:1.6;white-space:pre-line}
+.dlg-btns{display:flex;gap:10px}
+.dlg-btns button{flex:1;padding:12px;border-radius:12px;background:var(--line);font-weight:700}
+.dlg-btns button.ok{background:var(--ink);color:#fff}
+.dlg-btns button.ok.danger{background:#b33}
+#toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet" class="sheet hidden"><div class="sheet-bg" data-act="closeSheet"></div><div class="sheet-body" id="sheetBody"></div></div>
+<div id="player" class="player hidden">
+  <button class="pclose" data-act="pClose">✕</button>
+  <div class="pocc" id="pOcc"></div>
+  <div class="ptitle" id="pTitle"></div>
+  <div class="pwho" id="pWho"></div>
+  <div class="pnote" id="pNote"></div>
+  <div class="pbar"><i id="pBar"></i></div>
+  <div class="pdots" id="pDots"></div>
+  <div class="pctrl">
+    <button data-act="pStep" data-arg="-1">⏮</button>
+    <button class="pp" id="pPP" data-act="pToggle">⏸</button>
+    <button data-act="pStep" data-arg="1">⏭</button>
+  </div>
+</div>
+<div id="dlg" class="dlg hidden"><div class="dlg-box"><p id="dlgMsg"></p><div class="dlg-btns"><button id="dlgNo">取消</button><button id="dlgOk" class="ok">確定</button></div></div></div>
+<div id="toast"></div>
+<audio id="aud" playsinline preload="auto"></audio>
+
+<script>
+'use strict';
+/* 雲端後端位址（arcar 的 /blessing 路由）。要換成別的 Worker，可在主控台執行：localStorage.setItem('qs-api','https://…/blessing') */
+var API_BASE='https://arcar.kftseng2oo1.workers.dev/blessing';
+const API=(()=>{try{return localStorage.getItem('qs-api')||API_BASE}catch(e){return API_BASE}})();
+const IN_LINE=/\bLine\//i.test(navigator.userAgent);
+
+const OCC={
+  birthday:{n:'生日',e:'🎂',c:'#e0704f',to:'壽星',tips:['生日快樂！','祝你身體健康、平安喜樂','新的一歲，願望都實現','每天都笑口常開']},
+  mother:{n:'母親節',e:'💐',c:'#d65c7a',to:'媽媽',tips:['母親節快樂！','媽，謝謝您','辛苦了，我們愛您','祝您身體健康']},
+  father:{n:'父親節',e:'👔',c:'#3f6fa8',to:'爸爸',tips:['父親節快樂！','爸，謝謝您','您辛苦了','祝您身體健康']},
+  elder:{n:'重陽節',e:'🌼',c:'#c8902a',to:'阿公阿嬤',tips:['重陽節快樂','身體健健康康','長命百歲','我們很想念您']},
+  newyear:{n:'新年',e:'🧧',c:'#c8372d',to:'全家',tips:['新年快樂！','恭喜發財','萬事如意','闔家平安']},
+  midautumn:{n:'中秋',e:'🥮',c:'#b77a2b',to:'家人',tips:['中秋節快樂','月圓人團圓','祝闔家平安']},
+  travel:{n:'旅遊回憶',e:'🧳',c:'#2f8f8a',to:'這趟旅程',tips:['今天最開心的是…','最好吃的是…','最難忘的一刻…','下次還要再來！']},
+  custom:{n:'其他',e:'✨',c:'#6a5acd',to:'',tips:['謝謝你','加油！','我們都在你身邊']}
+};
+const PALETTE=['#e0704f','#3f6fa8','#2f8f8a','#c8902a','#d65c7a','#6a5acd','#5b8c3a','#a0522d'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmt=s=>{s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const colorOf=name=>{let h=0;for(const ch of String(name))h=(h*31+ch.charCodeAt(0))>>>0;return PALETTE[h%PALETTE.length]};
+function toast(t,ms){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(hideToast,ms||2200)}
+function hideToast(){$('toast').classList.remove('on')}
+function titleFor(o,to){
+  if(o==='birthday')return (to||'')+'生日快樂';
+  if(o==='travel')return (to&&to!=='這趟旅程'?to:'旅途')+'回憶';
+  if(o==='custom')return to?'給'+to+'的話':'我們的祝福';
+  return OCC[o].n+'快樂'+(to?'・給'+to:'');
+}
+
+/* ---------- 自訂對話框（取代 confirm，WebView 也能用） ---------- */
+function ask(msg,okText,danger){return new Promise(res=>{
+  $('dlgMsg').textContent=msg;$('dlgOk').textContent=okText||'確定';$('dlgOk').className='ok'+(danger?' danger':'');
+  $('dlg').classList.remove('hidden');
+  const done=v=>{$('dlg').classList.add('hidden');$('dlgOk').onclick=$('dlgNo').onclick=null;res(v)};
+  $('dlgOk').onclick=()=>done(true);$('dlgNo').onclick=()=>done(false);
+})}
+
+/* ---------- 事件委派 ---------- */
+const ACT={};
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el||el.disabled)return;
+  const f=ACT[el.dataset.act];if(f){e.preventDefault();f(el.dataset.arg,el)}
+});
+document.addEventListener('input',e=>{if(e.target.id==='fTo')updTitlePh()});
+document.addEventListener('change',e=>{if(e.target.id==='fPhoto')pickPhoto(e.target)});
+
+/* ---------- IndexedDB（存 ArrayBuffer，iOS 相容） ---------- */
+let db;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('qisheng-blessing',1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('albums',{keyPath:'id'});d.createObjectStore('clips',{keyPath:'id'}).createIndex('albumId','albumId')};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+const store=(s,m)=>db.transaction(s,m||'readonly').objectStore(s);
+const rq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const put=(s,v)=>rq(store(s,'readwrite').put(v));
+const del=(s,k)=>rq(store(s,'readwrite').delete(k));
+const getAll=s=>rq(store(s).getAll());
+const clipsOf=id=>rq(store('clips').index('albumId').getAll(id)).then(a=>a.sort((x,y)=>x.order-y.order));
+
+let albums=[],cur=null,clips=[],syncing=false;
+const urlCache=new Map();
+function photoURL(a){if(!a||!a.photo)return'';const k=a.id+':'+(a.photoVer||0)+':'+a.photo.byteLength;if(!urlCache.has(k))urlCache.set(k,URL.createObjectURL(new Blob([a.photo],{type:'image/jpeg'})));return urlCache.get(k)}
+const clipBlob=c=>new Blob([c.data],{type:c.mime||'audio/mp4'});
+
+/* ---------- 雲端 ---------- */
+const isCloud=a=>!!(a&&a.cloud&&a.cloud.id);
+const isOwner=a=>!isCloud(a)||!!a.cloud.key;
+const keyH=a=>({'X-Key':a.cloud.key});
+async function api(path,opt){
+  const r=await fetch(API+path,opt||{});
+  if(!r.ok){let m='';try{m=(await r.json()).error}catch(e){}throw new Error(m||('連線失敗 '+r.status))}
+  return r;
+}
+function inviteURL(a,withKey){return location.origin+location.pathname+'?a='+a.cloud.id+'&openExternalBrowser=1'+(withKey?'#k='+a.cloud.key:'')}
+async function cloudCreate(a){
+  const j=await (await api('/a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({occ:a.occ,to:a.to,title:a.title,date:a.date})})).json();
+  a.cloud={id:j.id,key:j.key};
+  if(a.photo)await cloudPhoto(a);
+}
+async function cloudPhoto(a){
+  const r=await api('/a/'+a.cloud.id+'/photo',{method:'PUT',headers:Object.assign({'Content-Type':'image/jpeg'},keyH(a)),body:new Blob([a.photo],{type:'image/jpeg'})});
+  a.photoVer=(await r.json()).photoVer;
+}
+function cloudMeta(a,extra){
+  return api('/a/'+a.cloud.id,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},keyH(a)),
+    body:JSON.stringify(Object.assign({occ:a.occ,to:a.to,title:a.title,date:a.date},extra||{}))});
+}
+async function uploadClip(a,c){
+  const r=await api('/a/'+a.cloud.id+'/c',{method:'POST',headers:{
+    'Content-Type':c.mime||'audio/mp4','X-Name':encodeURIComponent(c.name||''),'X-Note':encodeURIComponent(c.note||''),
+    'X-Dur':String(Math.round((c.duration||0)*10)/10)},body:clipBlob(c)});
+  const j=await r.json();
+  c.cloudId=j.id;c.token=j.token;c.upAt=Date.now();c.pending=false;
+  await put('clips',c);return c;
+}
+async function ensureAudio(a,c){
+  if(c.data)return true;
+  if(!isCloud(a)||!c.cloudId)return false;
+  try{c.data=await (await api('/a/'+a.cloud.id+'/c/'+c.cloudId)).arrayBuffer();await put('clips',c);return true}catch(e){return false}
+}
+async function ensureAll(a){
+  const need=clips.filter(c=>!c.data&&c.cloudId);let n=0,fail=0;
+  for(const c of need){toast('下載聲音 '+(++n)+' / '+need.length,60000);if(!(await ensureAudio(a,c)))fail++}
+  if(need.length)fail?toast(fail+' 段下載失敗，請確認網路',3000):hideToast();
+}
+function setSync(t){const el=$('syncState');if(el)el.textContent=t?'・'+t:''}
+async function syncAlbum(a){
+  if(!isCloud(a)||syncing)return;
+  syncing=true;setSync('同步中…');
+  try{
+    const j=await (await api('/a/'+a.cloud.id)).json(),m=j.album;
+    Object.assign(a,{occ:m.occ,to:m.to,title:m.title,date:m.date});
+    if(m.photoVer&&m.photoVer!==a.photoVer){
+      try{a.photo=await (await api('/a/'+a.cloud.id+'/photo')).arrayBuffer();a.photoVer=m.photoVer}catch(e){}
+    }
+    const local=await clipsOf(a.id),byC=new Map(),seen=new Set(),list=[],drop=[];
+    local.forEach(c=>{if(c.cloudId)byC.set(c.cloudId,c)});
+    j.clips.forEach(s=>{
+      seen.add(s.id);
+      let c=byC.get(s.id);
+      if(!c)c={id:uid(),albumId:a.id,cloudId:s.id,data:null,createdAt:s.t};
+      Object.assign(c,{name:s.name,note:s.note,duration:s.dur,mime:s.mime});
+      list.push(c);
+    });
+    local.forEach(c=>{
+      if(!c.cloudId)list.push(c);                                   // 待上傳
+      else if(!seen.has(c.cloudId)){                                 // 雲端已刪除（剛上傳的給 5 分鐘緩衝，KV 清單有延遲）
+        if(Date.now()-(c.upAt||0)<5*60e3)list.push(c);else drop.push(c);
+      }
+    });
+    const ord=m.order||[],rank=c=>{const i=c.cloudId?ord.indexOf(c.cloudId):-1;return i<0?1e6:i};
+    list.sort((x,y)=>rank(x)-rank(y)||(x.createdAt-y.createdAt));
+    const s=store('clips','readwrite');
+    list.forEach((c,k)=>{c.order=k;s.put(c)});drop.forEach(c=>s.delete(c.id));
+    a.count=list.length;await put('albums',a);
+    if(cur&&cur.id===a.id){clips=list;renderAlbum()}
+    const pend=list.filter(c=>!c.cloudId&&c.data);
+    let up=0;for(const c of pend){try{await uploadClip(a,c);up++}catch(e){break}}
+    if(up){toast('已補上傳 '+up+' 段錄音');if(cur&&cur.id===a.id)renderAlbum()}
+    setSync('');
+  }catch(e){
+    setSync('離線');
+    if(/not found/.test(e.message))toast('雲端找不到這本祝福冊（可能已被刪除）',3500);
+  }finally{syncing=false}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cur&&isCloud(cur)&&$('player').classList.contains('hidden'))syncAlbum(cur)});
+
+/* ---------- 首頁 ---------- */
+async function loadAlbums(){albums=(await getAll('albums')).sort((a,b)=>b.createdAt-a.createdAt)}
+function renderHome(){
+  cur=null;
+  const list=albums.length?albums.map(a=>{const o=OCC[a.occ]||OCC.custom,p=photoURL(a);
+    return `<button class="card" data-act="open" data-arg="${a.id}">
+      <div class="thumb" style="background-color:${o.c}22;${p?`background-image:url(${p})`:''}">${p?'':o.e}</div>
+      <div><b>${esc(a.title)}${isCloud(a)?'<span class="tag">☁️ 共錄</span>':''}</b><small>${o.e} ${o.n}・${a.count||0} 段聲音・${esc(a.date||'')}</small></div></button>`}).join('')
+    :`<div class="empty"><div class="big">🎙️</div>還沒有祝福冊<br>建立一本，讓每個人錄一句話，<br>生日、節日、旅行回憶都能收在一起。<br>開啟雲端共錄，親友用自己的手機也能錄。</div>`;
+  $('app').innerHTML=`<div class="wrap"><h1>齊聲祝福</h1><p class="sub">把大家的聲音，收進同一份祝福</p>${list}</div>
+  <button class="fab" data-act="newAlbum">＋ 新的祝福冊</button>`;
+}
+ACT.open=id=>openAlbum(id);
+ACT.newAlbum=()=>openAlbumSheet();
+ACT.back=()=>renderHome();
+
+/* ---------- 祝福冊設定 ---------- */
+let selOcc='birthday',newPhoto=null;
+function openAlbumSheet(edit){
+  const a=edit||{occ:'birthday',to:'',title:'',date:today()};
+  selOcc=a.occ;newPhoto=null;
+  const cl=isCloud(edit);
+  $('sheetBody').innerHTML=`<h3>${edit?'編輯祝福冊':'新的祝福冊'}<button class="x" data-act="closeSheet">✕</button></h3>
+  <label class="l">場合</label>
+  <div class="occs">${Object.entries(OCC).map(([k,o])=>`<button class="occ${k===selOcc?' on':''}" data-act="occ" data-arg="${k}"><span>${o.e}</span>${o.n}</button>`).join('')}</div>
+  <label class="l" id="toLabel">${selOcc==='travel'?'旅程 / 地點':'送給誰'}</label>
+  <input id="fTo" value="${esc(a.to)}" placeholder="${esc(OCC[selOcc].to||'例如：小美')}">
+  <label class="l">標題</label>
+  <input id="fTitle" value="${esc(a.title)}">
+  <label class="l">日期</label>
+  <input id="fDate" type="date" value="${esc(a.date||today())}">
+  <label class="l">封面照片（選填）</label>
+  <div class="photo"><div class="pv" id="fPv" style="${a.photo?`background-image:url(${photoURL(a)})`:''}"></div>
+    <input id="fPhoto" type="file" accept="image/*" style="flex:1"></div>
+  ${edit?'':`<label class="chk"><input type="checkbox" id="fCloud" checked> ☁️ 雲端共錄：分享連結給親友，他們用自己的手機也能錄</label>`}
+  ${cl?'<p class="sub" style="margin:12px 2px 0">修改會同步給所有收到邀請的人。</p>':''}
+  <button class="save" data-act="saveAlbum" data-arg="${edit?edit.id:''}">${edit?'儲存':'建立'}</button>
+  ${edit?`<button class="save red" data-act="deleteAlbum" data-arg="${edit.id}">刪除這本祝福冊</button>`:''}`;
+  updTitlePh();openSheet();
+}
+function openGuestSheet(a){
+  $('sheetBody').innerHTML=`<h3>${esc(a.title)}<button class="x" data-act="closeSheet">✕</button></h3>
+  <p class="sub">這本祝福冊是別人建立、邀請你一起錄的。你可以錄音、聽全部內容，也能刪除自己錄的片段。</p>
+  <button class="save ghost" data-act="deleteAlbum" data-arg="${a.id}">從這台手機移除</button>`;
+  openSheet();
+}
+ACT.editAlbum=()=>isOwner(cur)?openAlbumSheet(cur):openGuestSheet(cur);
+ACT.occ=k=>{selOcc=k;document.querySelectorAll('.occ').forEach(b=>b.classList.toggle('on',b.dataset.arg===k));
+  $('toLabel').textContent=k==='travel'?'旅程 / 地點':'送給誰';$('fTo').placeholder=OCC[k].to||'例如：小美';updTitlePh()};
+function updTitlePh(){const t=$('fTitle');if(t)t.placeholder=titleFor(selOcc,$('fTo').value.trim()||OCC[selOcc].to)}
+async function pickPhoto(inp){const f=inp.files&&inp.files[0];if(!f)return;
+  try{newPhoto=await shrink(f);$('fPv').style.backgroundImage=`url(${URL.createObjectURL(new Blob([newPhoto],{type:'image/jpeg'}))})`}catch(e){toast('照片讀取失敗')}}
+function shrink(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);
+  img.onload=()=>{const s=Math.min(1,1200/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);
+    c.toBlob(b=>b?new Response(b).arrayBuffer().then(res,rej):rej(new Error('toBlob')),'image/jpeg',.85)};
+  img.onerror=rej;img.src=u})}
+ACT.saveAlbum=async(id,btn)=>{
+  btn.disabled=true;
+  const old=id?albums.find(x=>x.id===id):null,to=$('fTo').value.trim();
+  const a=Object.assign({},old||{id:uid(),createdAt:Date.now(),count:0},{
+    occ:selOcc,to,title:$('fTitle').value.trim()||titleFor(selOcc,to||OCC[selOcc].to),date:$('fDate').value,updatedAt:Date.now()});
+  if(newPhoto){a.photo=newPhoto;a.photoVer=Date.now()}
+  if(!old&&$('fCloud')&&$('fCloud').checked){
+    toast('建立雲端祝福冊…',20000);
+    try{await cloudCreate(a);hideToast()}catch(e){delete a.cloud;toast('雲端建立失敗，先存在手機：'+e.message,3500)}
+  }else if(old&&isCloud(a)&&a.cloud.key){
+    try{await cloudMeta(a);if(newPhoto)await cloudPhoto(a)}catch(e){toast('雲端更新失敗：'+e.message,3000)}
+  }
+  await put('albums',a);await loadAlbums();closeSheet();await openAlbum(a.id);
+  if(!old){if(isCloud(a))ACT.invite();else openRecorder()}
+};
+ACT.deleteAlbum=async id=>{
+  const a=albums.find(x=>x.id===id);if(!a)return;
+  const cl=isCloud(a),own=isOwner(a);
+  const msg=cl&&own?'確定刪除這本祝福冊？\n雲端上所有人的錄音都會一起刪除。'
+    :cl?'從這台手機移除這本祝福冊？\n雲端內容不受影響，之後用邀請連結還能再打開。'
+    :'確定刪除這本祝福冊和所有錄音？';
+  if(!(await ask(msg,cl&&!own?'移除':'刪除',true)))return;
+  if(cl&&own){try{await api('/a/'+a.cloud.id,{method:'DELETE',headers:keyH(a)})}
+    catch(e){if(!/not found/.test(e.message)){toast('雲端刪除失敗：'+e.message,3500);return}}}
+  const keys=await rq(store('clips').index('albumId').getAllKeys(id));
+  const s=store('clips','readwrite');keys.forEach(k=>s.delete(k));
+  await del('albums',id);await loadAlbums();closeSheet();renderHome();
+};
+
+/* ---------- 祝福冊頁 ---------- */
+async function openAlbum(id){
+  cur=albums.find(a=>a.id===id);if(!cur)return renderHome();
+  clips=await clipsOf(id);renderAlbum();
+  if(isCloud(cur))syncAlbum(cur);
+}
+function renderAlbum(){
+  const a=cur,o=OCC[a.occ]||OCC.custom,p=photoURL(a),cl=isCloud(a),own=isOwner(a);
+  const total=clips.reduce((s,c)=>s+(c.duration||0),0),mine=clips.some(c=>c.token);
+  let banner='';
+  if(cl&&!own&&!mine)banner+=`<div class="banner">🎁 你受邀為「${esc(a.title)}」錄一段話！按下方「錄一段祝福」開始，錄好之後大家都聽得到。</div>`;
+  if(IN_LINE)banner+=`<div class="banner">目前是在 LINE 裡開啟。如果無法錄音，請點右上角「⋯」選「以預設瀏覽器開啟」。</div>`;
+  $('app').innerHTML=`<div class="hero" style="background-color:${o.c};${p?`background-image:url(${p})`:''}">
+    <div class="row"><button class="ib" data-act="back">‹</button>
+      <div>${cl?'<button class="ib" data-act="sync">⟳</button>':''}<button class="ib" data-act="editAlbum">${own?'✎':'⋯'}</button></div></div>
+    <h2>${o.e} ${esc(a.title)}</h2>
+    <p>${esc(a.to?(a.occ==='travel'?a.to:'給 '+a.to):o.n)}・${esc(a.date||'')}${cl?'・☁️ 共錄中':''}<span id="syncState"></span></p></div>
+  <div class="wrap">
+    ${banner}
+    ${cl?'<button class="btn sky wide" data-act="invite">📨 邀請親友一起錄</button>'
+      :'<button class="btn wide" data-act="enableCloud">☁️ 開啟雲端共錄，讓親友用自己的手機錄</button>'}
+    <div class="acts">
+      <button class="btn pri" data-act="play" data-arg="0" ${clips.length?'':'disabled'}>▶ 全部播放</button>
+      <button class="btn" data-act="exportAll" ${clips.length?'':'disabled'}>⬇ 匯出合輯</button>
+    </div>
+    <div class="sec"><span>${clips.length} 段聲音</span><span>共 ${fmt(total)}</span></div>
+    ${clips.length?clips.map((c,i)=>{
+      const canDel=!cl||own||!!c.token;
+      return `<div class="clip">
+      <div class="av" style="background:${colorOf(c.name)}">${esc((c.name||'?').slice(0,1))}</div>
+      <div class="mid"><b>${esc(c.name||'匿名')}${c.token&&!own?'（我）':''}</b><small>${fmt(c.duration)}${cl&&!c.cloudId?'・<span class="pend">待上傳</span>':''}${c.note?'・'+esc(c.note):''}</small></div>
+      <button class="mini play" data-act="play" data-arg="${i}">▶</button>
+      ${own?`<button class="mini" data-act="move" data-arg="${i},-1" ${i?'':'disabled'}>↑</button>
+      <button class="mini" data-act="move" data-arg="${i},1" ${i<clips.length-1?'':'disabled'}>↓</button>`:''}
+      ${canDel?`<button class="mini" data-act="removeClip" data-arg="${i}">🗑</button>`:''}</div>`}).join('')
+      :`<div class="empty">還沒有人錄音<br>${cl?'把邀請連結傳給大家，或':''}按下方按鈕，把手機傳給每個人輪流錄吧！</div>`}
+  </div>
+  <button class="fab" data-act="record">🎙 錄一段祝福</button>`;
+}
+ACT.sync=()=>syncAlbum(cur);
+async function syncCount(){cur.count=clips.length;await put('albums',cur)}
+ACT.move=async arg=>{
+  const [i,d]=arg.split(',').map(Number),j=i+d;
+  [clips[i],clips[j]]=[clips[j],clips[i]];
+  const s=store('clips','readwrite');clips.forEach((c,k)=>{c.order=k;s.put(c)});renderAlbum();
+  if(isCloud(cur))cloudMeta(cur,{order:clips.map(c=>c.cloudId).filter(Boolean)}).catch(e=>toast('順序同步失敗：'+e.message,3000));
+};
+ACT.removeClip=async i=>{
+  const a=cur,c=clips[+i];
+  if(!(await ask('刪除「'+(c.name||'匿名')+'」這段錄音？'+(isCloud(a)&&c.cloudId?'\n所有人都會看不到。':''),'刪除',true)))return;
+  if(isCloud(a)&&c.cloudId){
+    try{await api('/a/'+a.cloud.id+'/c/'+c.cloudId,{method:'DELETE',headers:a.cloud.key?keyH(a):{'X-Token':c.token||''}})}
+    catch(e){if(!/not found/.test(e.message)){toast('刪除失敗：'+e.message,3000);return}}
+  }
+  await del('clips',c.id);clips.splice(+i,1);await syncCount();renderAlbum();
+};
+
+/* ---------- 邀請 / 開啟雲端 ---------- */
+ACT.enableCloud=async()=>{
+  const a=cur;
+  if(!(await ask('把這本祝福冊放上雲端？\n收到邀請連結的人可以用自己的手機錄音，也能聽到全部內容。','開啟')))return;
+  try{
+    toast('建立雲端祝福冊…',60000);await cloudCreate(a);await put('albums',a);
+    const todo=clips.filter(c=>c.data&&!c.cloudId);let n=0;
+    for(const c of todo){toast('上傳聲音 '+(++n)+' / '+todo.length,60000);await uploadClip(a,c)}
+    if(todo.length)await cloudMeta(a,{order:clips.map(c=>c.cloudId).filter(Boolean)});
+    toast('已開啟雲端共錄 ☁️');renderAlbum();ACT.invite();
+  }catch(e){
+    toast(isCloud(a)?'部分錄音還沒上傳，連上網路後會自動補傳':'開啟失敗：'+e.message,3500);
+    if(isCloud(a))await put('albums',a);renderAlbum();
+  }
+};
+const inviteText=a=>'來幫「'+a.title+'」錄一句祝福吧！🎙️';
+ACT.invite=()=>{
+  const a=cur;
+  $('sheetBody').innerHTML=`<h3>邀請親友一起錄<button class="x" data-act="closeSheet">✕</button></h3>
+  <p class="sub">把連結傳給家人朋友，他們用自己的手機打開就能錄一段祝福。錄好的聲音大家都看得到、聽得到。</p>
+  <div class="linkbox">${esc(inviteURL(a))}</div>
+  <button class="save" data-act="shareInvite">分享邀請連結</button>
+  <button class="save dark" data-act="copy" data-arg="invite">複製連結</button>
+  ${a.cloud.key?`<details class="own"><summary>在自己的其他裝置管理</summary>
+    <p class="sub" style="margin-top:8px">這個連結有管理權限（可以編輯、刪除任何錄音），請只留給自己。</p>
+    <button class="save ghost" data-act="copy" data-arg="owner">複製管理連結</button></details>`:''}`;
+  openSheet();
+};
+ACT.shareInvite=async()=>{
+  const a=cur,url=inviteURL(a);
+  if(navigator.share){try{await navigator.share({title:a.title,text:inviteText(a),url});return}catch(e){if(e&&e.name==='AbortError')return}}
+  copyText(inviteText(a)+'\n'+url);
+};
+ACT.copy=k=>copyText(k==='owner'?inviteURL(cur,true):inviteText(cur)+'\n'+inviteURL(cur));
+function copyText(t){
+  const done=()=>toast('已複製，貼到 LINE 給大家吧');
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(done,()=>fallbackCopy(t,done));
+  else fallbackCopy(t,done);
+}
+function fallbackCopy(t,done){
+  const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+  document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);
+  let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  ta.remove();ok?done():toast('無法自動複製，請長按上方連結複製',3000);
+}
+async function handleJoin(){
+  const q=new URLSearchParams(location.search),cid=q.get('a');
+  if(!cid)return false;
+  const km=location.hash.match(/k=([a-z0-9]+)/),key=km?km[1]:null;
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+  let a=albums.find(x=>isCloud(x)&&x.cloud.id===cid);
+  if(!a){
+    try{
+      toast('打開祝福冊…',20000);
+      const j=await (await api('/a/'+encodeURIComponent(cid))).json(),m=j.album;
+      a={id:uid(),occ:m.occ,to:m.to,title:m.title,date:m.date,createdAt:Date.now(),updatedAt:Date.now(),count:j.clips.length,cloud:{id:cid,key:key}};
+      await put('albums',a);await loadAlbums();hideToast();
+    }catch(e){toast('打不開這個邀請：'+e.message,4000);return false}
+  }else if(key&&!a.cloud.key){a.cloud.key=key;await put('albums',a);toast('已取得管理權限')}
+  await openAlbum(a.id);
+  return true;
+}
+
+/* ---------- 錄音 ---------- */
+let R=null,actx=null;
+function getCtx(){const C=window.AudioContext||window.webkitAudioContext;if(!actx)actx=new C();if(actx.state==='suspended')actx.resume();return actx}
+function pickMime(){if(!window.MediaRecorder||!MediaRecorder.isTypeSupported)return'';
+  for(const t of['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'])if(MediaRecorder.isTypeSupported(t))return t;return''}
+const recentNames=()=>{try{return JSON.parse(localStorage.getItem('qs-names')||'[]')}catch(e){return[]}};
+function rememberName(n){try{const a=recentNames().filter(x=>x!==n);a.unshift(n);localStorage.setItem('qs-names',JSON.stringify(a.slice(0,12)))}catch(e){}}
+ACT.record=()=>openRecorder();
+function openRecorder(){
+  const o=OCC[cur.occ]||OCC.custom;
+  const names=['全體一起'].concat(recentNames().filter(n=>n!=='全體一起')).slice(0,10);
+  $('sheetBody').innerHTML=`<h3>錄一段祝福<button class="x" data-act="closeSheet">✕</button></h3>
+  <label class="l">誰在說？</label>
+  <input id="rName" placeholder="例如：小明、外孫女、全家" value="${esc(isCloud(cur)&&!isOwner(cur)?(recentNames()[0]||''):'')}">
+  <div class="chips">${names.map(n=>`<button class="chip" data-act="nameChip">${esc(n)}</button>`).join('')}</div>
+  <label class="l">不知道說什麼？點一下當提詞</label>
+  <div class="chips tips">${o.tips.map(t=>`<button class="chip" data-act="tip">${esc(t)}</button>`).join('')}</div>
+  <label class="chk"><input type="checkbox" id="rCd" checked> 開錄前倒數 3 秒（適合大家一起說）</label>
+  <div class="recbox" id="recBox">
+    <button class="recbtn" id="recBtn" data-act="recToggle">開始</button>
+    <div class="rtime" id="recTime">0:00</div>
+    <div class="rhint" id="recHint">最長 90 秒</div>
+  </div>
+  <div id="recDone" style="display:none">
+    <audio class="pv" id="recPrev" controls playsinline></audio>
+    <div class="row2"><button style="background:var(--line)" data-act="recReset">重錄</button>
+    <button style="background:var(--accent);color:#fff" data-act="recSave">儲存這段</button></div>
+  </div>
+  <label class="l">文字留言（選填，播放時會顯示）</label>
+  <textarea id="rNote" placeholder="想寫下的話…"></textarea>`;
+  R={state:'idle'};openSheet();
+}
+ACT.nameChip=(_,el)=>{$('rName').value=el.textContent};
+ACT.tip=(_,el)=>{const n=$('rNote');n.value=n.value?n.value+'，'+el.textContent:el.textContent};
+ACT.recToggle=()=>{
+  if(!R)return;
+  if(R.state==='idle')return recStart();
+  if(R.state==='rec')return recStop();
+  if(R.state==='cd'){clearInterval(R.cdTimer);cleanupStream();R.state='idle';uiIdle()}
+};
+function uiIdle(){$('recBtn').textContent='開始';$('recBtn').classList.remove('on');$('recTime').textContent='0:00';$('recHint').textContent='最長 90 秒';$('recBtn').style.boxShadow=''}
+async function recStart(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.MediaRecorder){
+    toast(IN_LINE?'LINE 內無法錄音，請點右上角「⋯」用預設瀏覽器開啟':'此瀏覽器不支援錄音，請用 Safari 或 Chrome 開啟',4000);return}
+  const ctx=getCtx(),mine=R;let st;
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
+  catch(e){toast('無法使用麥克風，請在設定允許麥克風權限',3500);return}
+  if(R!==mine){st.getTracks().forEach(t=>t.stop());return}   // 等權限時關掉了視窗
+  R.stream=st;
+  try{R.src=ctx.createMediaStreamSource(R.stream);R.an=ctx.createAnalyser();R.an.fftSize=512;R.src.connect(R.an)}catch(e){}
+  if($('rCd').checked){
+    R.state='cd';let n=3;$('recTime').textContent=n;$('recHint').textContent='準備…';$('recBtn').textContent='取消';
+    R.cdTimer=setInterval(()=>{n--;if(n>0)$('recTime').textContent=n;else{clearInterval(R.cdTimer);beginRecording()}},1000);
+  }else beginRecording();
+}
+function beginRecording(){
+  const mime=pickMime();
+  try{R.mr=new MediaRecorder(R.stream,mime?{mimeType:mime}:undefined)}catch(e){R.mr=new MediaRecorder(R.stream)}
+  R.chunks=[];R.mr.ondataavailable=e=>{if(e.data&&e.data.size)R.chunks.push(e.data)};
+  R.mr.onstop=onRecStopped;
+  R.mr.start(1000);R.state='rec';R.t0=performance.now();
+  $('recBtn').textContent='停止';$('recBtn').classList.add('on');$('recHint').textContent='錄音中…說完按停止';
+  const buf=R.an?new Uint8Array(R.an.fftSize):null;
+  const tick=()=>{if(!R||R.state!=='rec')return;const el=(performance.now()-R.t0)/1000;$('recTime').textContent=fmt(el);
+    if(buf){R.an.getByteTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++){const x=(buf[i]-128)/128;s+=x*x}const lv=Math.min(1,Math.sqrt(s/buf.length)*4);
+      $('recBtn').style.boxShadow='0 0 0 '+Math.round(6+lv*30)+'px rgba(224,65,58,.22)'}
+    if(el>=90){recStop();return}R.raf=requestAnimationFrame(tick)};tick();
+}
+function recStop(){if(!R||R.state!=='rec')return;R.dur=(performance.now()-R.t0)/1000;R.state='stopping';cancelAnimationFrame(R.raf);try{R.mr.stop()}catch(e){}}
+function cleanupStream(){if(!R)return;try{R.src&&R.src.disconnect()}catch(e){}if(R.stream)R.stream.getTracks().forEach(t=>t.stop());R.stream=null}
+function onRecStopped(){
+  if(!R)return;
+  cleanupStream();
+  R.blob=new Blob(R.chunks,{type:(R.mr&&R.mr.mimeType)||pickMime()||'audio/mp4'});R.state='done';
+  if(R.prevURL)URL.revokeObjectURL(R.prevURL);R.prevURL=URL.createObjectURL(R.blob);
+  $('recBox').style.display='none';$('recDone').style.display='block';$('recPrev').src=R.prevURL;
+}
+ACT.recReset=()=>{if(R.prevURL)URL.revokeObjectURL(R.prevURL);R={state:'idle'};$('recDone').style.display='none';$('recBox').style.display='block';$('recPrev').removeAttribute('src');uiIdle()};
+ACT.recSave=async(_,btn)=>{
+  if(!R||!R.blob||!R.blob.size){toast('沒有錄到聲音，請重錄');return}
+  btn.disabled=true;
+  const a=cur,name=$('rName').value.trim()||'匿名';
+  const c={id:uid(),albumId:a.id,name,note:$('rNote').value.trim(),data:await new Response(R.blob).arrayBuffer(),mime:R.blob.type,
+    duration:R.dur||0,createdAt:Date.now(),order:clips.length?Math.max.apply(null,clips.map(x=>x.order))+1:0,pending:isCloud(a)};
+  await put('clips',c);clips.push(c);if(name!=='匿名')rememberName(name);
+  await syncCount();closeSheet();renderAlbum();
+  if(!isCloud(a)){toast('已收下 '+name+' 的祝福 🎉');return}
+  toast('上傳中…',30000);
+  try{await uploadClip(a,c);toast('已收下 '+name+' 的祝福 🎉 大家都聽得到了',3000)}
+  catch(e){toast('已存在手機，連上網路後會自動上傳',3500)}
+  if(cur&&cur.id===a.id)renderAlbum();
+};
+
+/* ---------- Sheet ---------- */
+function openSheet(){$('sheet').classList.remove('hidden')}
+function closeSheet(){
+  if(R){if(R.state==='rec'&&R.mr){R.mr.onstop=null;try{R.mr.stop()}catch(e){}}clearInterval(R.cdTimer);cancelAnimationFrame(R.raf);cleanupStream();if(R.prevURL)URL.revokeObjectURL(R.prevURL);R=null}
+  $('sheet').classList.add('hidden');
+}
+ACT.closeSheet=closeSheet;
+
+/* ---------- 播放 ---------- */
+const aud=$('aud');let P={i:0,url:null,timer:null,list:[]};
+ACT.play=async i=>{
+  const a=cur,target=clips[+i];
+  await ensureAll(a);
+  P.list=clips.filter(c=>c.data);
+  if(!P.list.length){toast('沒有可以播放的聲音');return}
+  const pl=$('player'),o=OCC[a.occ]||OCC.custom,p=photoURL(a);
+  pl.style.backgroundColor=o.c;pl.style.backgroundImage=p?'url('+p+')':'';
+  $('pOcc').textContent=o.e;$('pTitle').textContent=a.title;pl.classList.remove('hidden');
+  playIdx(Math.max(0,P.list.indexOf(target)));
+};
+function playIdx(i){
+  clearTimeout(P.timer);const L=P.list;
+  if(i>=L.length){$('pWho').textContent='🎉';$('pNote').textContent='以上是大家的祝福';$('pBar').style.width='100%';$('pPP').textContent='↻';P.i=L.length;return}
+  if(i<0)i=0;P.i=i;const c=L[i];
+  $('pWho').textContent=c.name||'匿名';$('pNote').textContent=c.note||'';$('pDots').textContent=(i+1)+' / '+L.length;$('pBar').style.width='0';
+  if(P.url)URL.revokeObjectURL(P.url);P.url=URL.createObjectURL(clipBlob(c));aud.src=P.url;
+  const pr=aud.play();$('pPP').textContent='⏸';if(pr&&pr.catch)pr.catch(()=>{$('pPP').textContent='▶'});
+}
+aud.addEventListener('timeupdate',()=>{const c=P.list[P.i];if(!c)return;const d=isFinite(aud.duration)&&aud.duration>0?aud.duration:(c.duration||1);$('pBar').style.width=Math.min(100,aud.currentTime/d*100)+'%'});
+aud.addEventListener('ended',()=>{if($('player').classList.contains('hidden'))return;$('pBar').style.width='100%';P.timer=setTimeout(()=>playIdx(P.i+1),800)});
+ACT.pToggle=()=>{if(P.i>=P.list.length)return playIdx(0);if(aud.paused){aud.play();$('pPP').textContent='⏸'}else{aud.pause();$('pPP').textContent='▶'}};
+ACT.pStep=d=>playIdx(Math.min(P.list.length-1,Math.max(0,P.i+Number(d))));
+ACT.pClose=()=>{clearTimeout(P.timer);aud.pause();$('player').classList.add('hidden')};
+
+/* ---------- 匯出合輯（合併成一個 WAV） ---------- */
+function decode(ctx,ab){return new Promise((res,rej)=>{const p=ctx.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)})}
+function render(oc){return new Promise((res,rej)=>{oc.oncomplete=e=>res(e.renderedBuffer);const p=oc.startRendering();if(p&&p.then)p.then(res,rej)})}
+function toWav(f32,sr){const n=f32.length,b=new ArrayBuffer(44+n*2),v=new DataView(b);const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  for(let i=0,o=44;i<n;i++,o+=2){const s=Math.max(-1,Math.min(1,f32[i]));v.setInt16(o,s<0?s*0x8000:s*0x7fff,true)}
+  return new Blob([b],{type:'audio/wav'})}
+let lastExport=null;
+ACT.exportAll=async()=>{
+  const a=cur;if(!clips.length)return;
+  await ensureAll(a);
+  toast('正在合併大家的聲音…',60000);
+  try{
+    const ctx=getCtx(),bufs=[];
+    for(const c of clips){if(!c.data)continue;try{bufs.push(await decode(ctx,c.data.slice(0)))}catch(e){console.warn('skip',c.name,e)}}
+    if(!bufs.length)throw new Error('decode');
+    const GAP=0.7,LEAD=0.4,total=LEAD+bufs.reduce((s,b)=>s+b.duration+GAP,0);
+    const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    let sr=22050,oc;try{oc=new OC(1,Math.ceil(total*sr),sr)}catch(e){sr=44100;oc=new OC(1,Math.ceil(total*sr),sr)}
+    let t=LEAD;
+    for(const b of bufs){let pk=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i+=4){const x=Math.abs(d[i]);if(x>pk)pk=x}}
+      const g=oc.createGain();g.gain.value=pk>0.01?Math.min(3,0.85/pk):1;
+      const s=oc.createBufferSource();s.buffer=b;s.connect(g);g.connect(oc.destination);s.start(t);t+=b.duration+GAP}
+    const out=await render(oc);
+    const blob=toWav(out.getChannelData(0),sr),name=(a.title||'祝福').replace(/[\\/:*?"<>|]/g,'')+'.wav';
+    hideToast();showShare(blob,name,out.duration);
+  }catch(e){console.error(e);toast('合併失敗，這台裝置可能不支援，請改用「全部播放」',3500)}
+};
+function showShare(blob,name,dur){
+  const u=URL.createObjectURL(blob);lastExport={blob,name};
+  $('sheetBody').innerHTML=`<h3>祝福合輯完成<button class="x" data-act="closeSheet">✕</button></h3>
+  <p class="sub" style="margin:0">${esc(name)}・${fmt(dur)}・${(blob.size/1048576).toFixed(1)} MB</p>
+  <audio class="pv" controls playsinline src="${u}"></audio>
+  <button class="save" data-act="shareFile">分享（LINE、訊息…）</button>
+  <a class="save dark" href="${u}" download="${esc(name)}">下載檔案</a>`;
+  openSheet();
+}
+ACT.shareFile=async()=>{
+  if(!lastExport)return;
+  const f=new File([lastExport.blob],lastExport.name,{type:'audio/wav'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:cur?cur.title:''})}catch(e){}}
+  else toast('此裝置無法直接分享，請用「下載檔案」');
+};
+
+/* ---------- PWA 圖示 / manifest ---------- */
+(function(){try{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');
+  g.fillStyle='#d9603b';g.fillRect(0,0,512,512);g.font='300px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🎙️',256,280);
+  const icon=c.toDataURL('image/png');$('ati').href=icon;
+  const mf={name:'齊聲祝福',short_name:'齊聲祝福',start_url:location.href.split(/[?#]/)[0],display:'standalone',background_color:'#f6efe4',theme_color:'#f6efe4',icons:[{src:icon,sizes:'512x512',type:'image/png'}]};
+  $('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}))}catch(e){}})();
+
+openDB().then(d=>{db=d;return loadAlbums()})
+  .then(async()=>{if(!(await handleJoin()))renderHome()})
+  .catch(e=>{console.error(e);$('app').innerHTML='<div class="empty">無法開啟儲存空間（請勿使用無痕模式）</div>'});
+</script>
+</body>
+</html>
