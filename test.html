@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>齊聲祝福 自我測試</title>
+<style>
+body{margin:0;background:#f6efe4;color:#3b2f2a;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;padding:20px 16px calc(30px + env(safe-area-inset-bottom))}
+h1{font-size:22px;margin:4px 0 6px}
+p{color:#8a7a6e;font-size:14px;margin:0 0 14px}
+button{font:inherit;border:0;border-radius:14px;padding:14px;width:100%;background:#d9603b;color:#fff;font-weight:700;font-size:17px}
+button:disabled{opacity:.5}
+ol{padding:0;list-style:none;margin:16px 0}
+li{background:#fffaf2;border:1px solid #e7dccb;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px;display:flex;gap:10px}
+li b{flex:none;width:22px}
+li small{display:block;color:#8a7a6e;word-break:break-all;margin-top:2px}
+#sum{font-weight:700;font-size:18px;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<h1>🧪 齊聲祝福 自我測試</h1>
+<p id="api"></p>
+<button id="go">開始測試</button>
+<ol id="out"></ol>
+<div id="sum"></div>
+<script>
+'use strict';
+var API=(function(){try{return localStorage.getItem('qs-api')||'https://arcar.kftseng2oo1.workers.dev/blessing'}catch(e){return 'https://arcar.kftseng2oo1.workers.dev/blessing'}})();
+document.getElementById('api').textContent='後端：'+API+'（測試資料會在最後自動刪除）';
+var out=document.getElementById('out'),pass=0,fail=0;
+function row(ok,title,detail){var li=document.createElement('li');li.innerHTML='<b>'+(ok?'✅':'❌')+'</b><div>'+title+'<small></small></div>';li.querySelector('small').textContent=detail||'';out.appendChild(li);ok?pass++:fail++}
+async function call(path,opt){var r=await fetch(API+path,opt||{});var t=r.headers.get('content-type')||'';var body=t.indexOf('json')>=0?await r.json().catch(function(){return null}):await r.arrayBuffer();return{status:r.status,body:body,type:t}}
+async function step(title,fn){try{var d=await fn();row(true,title,d)}catch(e){row(false,title,e.message||String(e));throw e}}
+function must(c,msg){if(!c)throw new Error(msg)}
+document.getElementById('go').addEventListener('click',async function(){
+  var btn=this;btn.disabled=true;out.innerHTML='';pass=fail=0;document.getElementById('sum').textContent='測試中…';
+  var id,key,c1,c2,stopped=false;
+  try{
+    await step('arcar 版本',async function(){var r=await fetch(API.replace(/\/blessing$/,'/'));var j=await r.json();must(parseFloat(j.version)>=15,'版本是 '+j.version+'，需要 15 以上');return 'v'+j.version});
+    await step('建立雲端祝福冊（KV 綁定）',async function(){var r=await call('/a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({occ:'birthday',to:'測試',title:'🧪 自我測試（會自動刪除）',date:'2026-10-20'})});
+      must(r.status===200,r.status+' '+(r.body&&r.body.error||''));id=r.body.id;key=r.body.key;return 'id = '+id});
+    await step('上傳錄音（自訂標頭 CORS 預檢、中文名字）',async function(){var r=await call('/a/'+id+'/c',{method:'POST',headers:{'Content-Type':'audio/mp4','X-Name':encodeURIComponent('小明'),'X-Note':encodeURIComponent('生日快樂！'),'X-Dur':'3.2'},body:new Uint8Array([1,2,3,4,5])});
+      must(r.status===200,r.status+' '+(r.body&&r.body.error||''));c1=r.body;return 'clip = '+c1.id});
+    await step('第二個人上傳',async function(){var r=await call('/a/'+id+'/c',{method:'POST',headers:{'Content-Type':'audio/webm','X-Name':encodeURIComponent('阿姨')},body:new Uint8Array([9,9])});must(r.status===200,r.status+'');c2=r.body;return 'clip = '+c2.id});
+    await step('讀取祝福冊與清單',async function(){
+      var r,names=[];
+      for(var i=0;i<8;i++){r=await call('/a/'+id);must(r.status===200,r.status+'');names=r.body.clips.map(function(c){return c.name});if(names.length>=2)break;await new Promise(function(s){setTimeout(s,2500)})}
+      must(r.body.album.title.indexOf('自我測試')>=0,'標題不對');must(!('kh' in r.body.album),'不應回傳金鑰雜湊');
+      must(names.indexOf('小明')>=0&&names.indexOf('阿姨')>=0,'清單只有：'+names.join('、')+'（KV 清單可能延遲，稍後再測一次）');
+      var m=r.body.clips.filter(function(c){return c.name==='小明'})[0];must(m.note==='生日快樂！','留言不對：'+m.note);
+      return names.join('、')+'；留言 OK'});
+    await step('下載錄音內容',async function(){var r=await call('/a/'+id+'/c/'+c1.id);var b=new Uint8Array(r.body);must(r.status===200&&b.length===5&&b[4]===5,'內容不符');return r.type+'，5 bytes 正確'});
+    await step('沒有金鑰不能改標題',async function(){var r=await call('/a/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:'{"title":"x"}'});must(r.status===403,'預期 403，得到 '+r.status);return '403 正確擋下'});
+    await step('用別人的 token 不能刪',async function(){var r=await call('/a/'+id+'/c/'+c1.id,{method:'DELETE',headers:{'X-Token':c2.token}});must(r.status===403,'預期 403，得到 '+r.status);return '403 正確擋下'});
+    await step('錄音者刪除自己的錄音',async function(){var r=await call('/a/'+id+'/c/'+c1.id,{method:'DELETE',headers:{'X-Token':c1.token}});must(r.status===200,r.status+'');return 'OK'});
+    await step('建立者用金鑰改標題、排序',async function(){var r=await call('/a/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Key':key},body:JSON.stringify({title:'🧪 改名測試',order:[c2.id]})});must(r.status===200,r.status+'');return 'OK'});
+    await step('上傳封面',async function(){var r=await call('/a/'+id+'/photo',{method:'PUT',headers:{'Content-Type':'image/jpeg','X-Key':key},body:new Uint8Array([255,216,255,217])});must(r.status===200&&r.body.photoVer>0,r.status+'');
+      var g=await call('/a/'+id+'/photo');must(g.status===200,'讀回封面 '+g.status);return 'OK'});
+  }catch(e){stopped=true}
+  if(id&&key){
+    try{var r=await call('/a/'+id,{method:'DELETE',headers:{'X-Key':key}});must(r.status===200,r.status+'');
+      var g=await call('/a/'+id);must(g.status===404,'刪除後還讀得到');row(true,'清除測試資料','整本已刪除')}
+    catch(e){row(false,'清除測試資料',e.message+'（祝福冊 id '+id+'）')}
+  }
+  document.getElementById('sum').textContent=fail?('❌ '+fail+' 項失敗，'+pass+' 項通過'):('🎉 全部 '+pass+' 項通過，雲端共錄正常');
+  btn.disabled=false;btn.textContent='再測一次';
+});
+</script>
+</body>
+</html>
