@@ -117,7 +117,7 @@ details.own summary{color:var(--sub);cursor:pointer}
 #toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center}
 #toast.on{opacity:1}
 .btn.line,.save.line{background:#06c755;color:#fff;border-color:#06c755}
-.btn.gift{background:linear-gradient(90deg,#ff9f5a,#ff5f7a 55%,#c77dff);color:#fff;border:0;font-size:16px;padding:14px}
+.btn.sendbtn{background:linear-gradient(90deg,#ff9f5a,#ff5f7a 55%,#c77dff);color:#fff;border:0;font-size:16px;padding:14px}
 .hint{color:var(--sub);font-size:13px;margin:6px 2px 0;line-height:1.5;text-align:center}
 .cardpv{display:block;margin:0 auto 4px;height:min(42vh,360px);aspect-ratio:9/16;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);background:#ddd}
 .vprog{text-align:center;font-size:15px;margin-top:12px;font-variant-numeric:tabular-nums}
@@ -414,7 +414,7 @@ function renderAlbum(){
     ${banner}
     ${cl?'<button class="btn sky wide" data-act="invite">📨 邀請親友一起錄</button>'
       :'<button class="btn wide" data-act="enableCloud">☁️ 開啟雲端共錄，讓親友用自己的手機錄</button>'}
-    ${clips.length?`<button class="btn gift wide" data-act="send">🎁 一鍵 LINE ${a.occ==='travel'?'分享回憶':'給'+esc(a.to||'對方')}</button>`:''}
+    ${clips.length?`<button class="btn sendbtn wide" data-act="send">🎁 一鍵 LINE ${a.occ==='travel'?'分享回憶':'給'+esc(a.to||'對方')}</button>`:''}
     <div class="acts">
       <button class="btn pri" data-act="play" data-arg="0" ${clips.length?'':'disabled'}>▶ 全部播放</button>
       <button class="btn" data-act="exportAll" ${clips.length?'':'disabled'}>⬇ 匯出合輯</button>
