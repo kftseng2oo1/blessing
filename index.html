@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="齊聲祝福">
 <title>齊聲祝福</title>
+<meta property="og:title" content="齊聲祝福">
+<meta property="og:description" content="把大家的聲音，收進同一份祝福 🎙️">
+<meta property="og:image" content="https://kftseng2oo1.github.io/blessing/icon-512.png">
 <link rel="manifest" id="mf">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -113,6 +116,24 @@ details.own summary{color:var(--sub);cursor:pointer}
 .dlg-btns button.ok.danger{background:#b33}
 #toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center}
 #toast.on{opacity:1}
+.btn.line,.save.line{background:#06c755;color:#fff;border-color:#06c755}
+.btn.gift{background:linear-gradient(90deg,#ff9f5a,#ff5f7a 55%,#c77dff);color:#fff;border:0;font-size:16px;padding:14px}
+.hint{color:var(--sub);font-size:13px;margin:6px 2px 0;line-height:1.5;text-align:center}
+.cardpv{display:block;margin:0 auto 4px;height:min(42vh,360px);aspect-ratio:9/16;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);background:#ddd}
+.vprog{text-align:center;font-size:15px;margin-top:12px;font-variant-numeric:tabular-nums}
+.vbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:10px 0 4px}
+.vbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+video.pv{display:block;margin:0 auto;height:min(46vh,400px);aspect-ratio:9/16;border-radius:14px;background:#000}
+.gift{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:flex-end;color:#fff;background-size:cover;background-position:center;padding:24px 20px calc(28px + env(safe-area-inset-bottom));text-align:center}
+.gift::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 30%,rgba(0,0,0,.75))}
+.gift>*{position:relative}
+.gift .ge{font-size:58px}
+.gift h2{font-size:30px;margin:8px 0 6px;line-height:1.3;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.gift p{margin:0 0 6px;font-size:16px;opacity:.95}
+.gift .who{font-size:14px;opacity:.85;margin-bottom:18px;line-height:1.6}
+.gift .open{display:block;width:100%;max-width:420px;margin:0 auto;padding:18px;border-radius:30px;background:#fff;color:#c8372d;font-size:20px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.gift .reply{display:block;margin:14px auto 0;color:#fff;font-size:15px;padding:10px 18px;border-radius:20px;background:rgba(255,255,255,.2)}
+.gift .vol{font-size:13px;opacity:.8;margin-top:10px}
 </style>
 </head>
 <body>
@@ -237,7 +258,7 @@ async function uploadClip(a,c){
 async function ensureAudio(a,c){
   if(c.data)return true;
   if(!isCloud(a)||!c.cloudId)return false;
-  try{c.data=await (await api('/a/'+a.cloud.id+'/c/'+c.cloudId)).arrayBuffer();await put('clips',c);return true}catch(e){return false}
+  try{c.data=await (await api('/a/'+a.cloud.id+'/c/'+c.cloudId)).arrayBuffer();if(!c.transient)await put('clips',c);return true}catch(e){return false}
 }
 async function ensureAll(a){
   const need=clips.filter(c=>!c.data&&c.cloudId);let n=0,fail=0;
@@ -284,7 +305,7 @@ async function syncAlbum(a){
     if(/not found/.test(e.message))toast('雲端找不到這本祝福冊（可能已被刪除）',3500);
   }finally{syncing=false}
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cur&&isCloud(cur)&&$('player').classList.contains('hidden'))syncAlbum(cur)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cur&&!cur.transient&&!VM&&isCloud(cur)&&$('player').classList.contains('hidden'))syncAlbum(cur)});
 
 /* ---------- 首頁 ---------- */
 async function loadAlbums(){albums=(await getAll('albums')).sort((a,b)=>b.createdAt-a.createdAt)}
@@ -393,6 +414,7 @@ function renderAlbum(){
     ${banner}
     ${cl?'<button class="btn sky wide" data-act="invite">📨 邀請親友一起錄</button>'
       :'<button class="btn wide" data-act="enableCloud">☁️ 開啟雲端共錄，讓親友用自己的手機錄</button>'}
+    ${clips.length?`<button class="btn gift wide" data-act="send">🎁 一鍵 LINE ${a.occ==='travel'?'分享回憶':'給'+esc(a.to||'對方')}</button>`:''}
     <div class="acts">
       <button class="btn pri" data-act="play" data-arg="0" ${clips.length?'':'disabled'}>▶ 全部播放</button>
       <button class="btn" data-act="exportAll" ${clips.length?'':'disabled'}>⬇ 匯出合輯</button>
@@ -430,7 +452,7 @@ ACT.removeClip=async i=>{
 };
 
 /* ---------- 邀請 / 開啟雲端 ---------- */
-ACT.enableCloud=async()=>{
+ACT.enableCloud=async arg=>{
   const a=cur;
   if(!(await ask('把這本祝福冊放上雲端？\n收到邀請連結的人可以用自己的手機錄音，也能聽到全部內容。','開啟')))return;
   try{
@@ -438,7 +460,7 @@ ACT.enableCloud=async()=>{
     const todo=clips.filter(c=>c.data&&!c.cloudId);let n=0;
     for(const c of todo){toast('上傳聲音 '+(++n)+' / '+todo.length,60000);await uploadClip(a,c)}
     if(todo.length)await cloudMeta(a,{order:clips.map(c=>c.cloudId).filter(Boolean)});
-    toast('已開啟雲端共錄 ☁️');renderAlbum();ACT.invite();
+    toast('已開啟雲端共錄 ☁️');renderAlbum();arg==='send'?ACT.send():ACT.invite();
   }catch(e){
     toast(isCloud(a)?'部分錄音還沒上傳，連上網路後會自動補傳':'開啟失敗：'+e.message,3500);
     if(isCloud(a))await put('albums',a);renderAlbum();
@@ -479,18 +501,63 @@ async function handleJoin(){
   if(!cid)return false;
   const km=location.hash.match(/k=([a-z0-9]+)/),key=km?km[1]:null;
   try{history.replaceState(null,'',location.pathname)}catch(e){}
+  const a=await joinCloud(cid,key);if(!a)return false;
+  await openAlbum(a.id);
+  return true;
+}
+async function joinCloud(cid,key){
   let a=albums.find(x=>isCloud(x)&&x.cloud.id===cid);
   if(!a){
     try{
       toast('打開祝福冊…',20000);
       const j=await (await api('/a/'+encodeURIComponent(cid))).json(),m=j.album;
-      a={id:uid(),occ:m.occ,to:m.to,title:m.title,date:m.date,createdAt:Date.now(),updatedAt:Date.now(),count:j.clips.length,cloud:{id:cid,key:key}};
+      a={id:uid(),occ:m.occ,to:m.to,title:m.title,date:m.date,createdAt:Date.now(),updatedAt:Date.now(),count:j.clips.length,cloud:{id:cid,key:key||null}};
       await put('albums',a);await loadAlbums();hideToast();
-    }catch(e){toast('打不開這個邀請：'+e.message,4000);return false}
+    }catch(e){toast('打不開這個邀請：'+e.message,4000);return null}
   }else if(key&&!a.cloud.key){a.cloud.key=key;await put('albums',a);toast('已取得管理權限')}
-  await openAlbum(a.id);
+  return a;
+}
+
+/* ---------- 收禮畫面（壽星點開 LINE 連結 ?g=） ---------- */
+let G=null;
+async function handleGift(){
+  const gid=new URLSearchParams(location.search).get('g');
+  if(!gid)return false;
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+  $('app').innerHTML='<div class="empty"><div class="big">🎁</div>正在打開祝福…</div>';
+  try{
+    const j=await (await api('/a/'+encodeURIComponent(gid))).json(),m=j.album;
+    const a={id:'gift-'+gid,occ:m.occ,to:m.to,title:m.title,date:m.date,photoVer:m.photoVer,cloud:{id:gid},transient:true};
+    if(m.photoVer){try{a.photo=await (await api('/a/'+gid+'/photo')).arrayBuffer()}catch(e){}}
+    const ord=m.order||[],rank=s=>{const i=ord.indexOf(s.id);return i<0?1e6:i};
+    const list=j.clips.slice().sort((x,y)=>rank(x)-rank(y)||x.t-y.t)
+      .map(s=>({id:'g'+s.id,cloudId:s.id,name:s.name,note:s.note,duration:s.dur,mime:s.mime,data:null,transient:true}));
+    G={a,clips:list};renderGift();
+  }catch(e){
+    $('app').innerHTML='<div class="empty"><div class="big">😢</div>這份祝福打不開<br>'+esc(e.message)+'</div>';
+  }
   return true;
 }
+function renderGift(){
+  const a=G.a,o=OCC[a.occ]||OCC.custom,p=photoURL(a);
+  const names=[...new Set(G.clips.map(c=>c.name).filter(n=>n&&n!=='匿名'))];
+  cur=a;clips=G.clips;
+  $('app').innerHTML=`<div class="gift" style="background-color:${o.c};${p?`background-image:url(${p})`:''}">
+    <div class="ge">${o.e}</div>
+    <h2>${esc(a.title)}</h2>
+    <p>${a.to&&a.occ!=='travel'?'給 '+esc(a.to)+'・':''}${G.clips.length} 段祝福</p>
+    <div class="who">${names.length?'來自：'+names.map(esc).join('、'):''}</div>
+    <button class="open" data-act="giftPlay" ${G.clips.length?'':'disabled'}>▶ 打開祝福</button>
+    <div class="vol">🔊 記得把音量打開</div>
+    <button class="reply" data-act="giftReply">💌 ${a.occ==='travel'?'我也來錄一段':'錄一句感謝回給大家'}</button>
+  </div>`;
+}
+ACT.giftPlay=()=>{cur=G.a;clips=G.clips;ACT.play(0)};
+ACT.giftReply=async()=>{
+  const a=await joinCloud(G.a.cloud.id,null);if(!a)return;
+  await openAlbum(a.id);
+  openRecorder({name:G.a.occ==='travel'?'':(G.a.to||''),tips:G.a.occ==='travel'?null:['謝謝大家！','好感動','我愛你們','有你們真好']});
+};
 
 /* ---------- 錄音 ---------- */
 let R=null,actx=null;
@@ -500,12 +567,13 @@ function pickMime(){if(!window.MediaRecorder||!MediaRecorder.isTypeSupported)ret
 const recentNames=()=>{try{return JSON.parse(localStorage.getItem('qs-names')||'[]')}catch(e){return[]}};
 function rememberName(n){try{const a=recentNames().filter(x=>x!==n);a.unshift(n);localStorage.setItem('qs-names',JSON.stringify(a.slice(0,12)))}catch(e){}}
 ACT.record=()=>openRecorder();
-function openRecorder(){
-  const o=OCC[cur.occ]||OCC.custom;
+function openRecorder(opt){
+  opt=opt||{};
+  const o=Object.assign({},OCC[cur.occ]||OCC.custom);if(opt.tips)o.tips=opt.tips;
   const names=['全體一起'].concat(recentNames().filter(n=>n!=='全體一起')).slice(0,10);
   $('sheetBody').innerHTML=`<h3>錄一段祝福<button class="x" data-act="closeSheet">✕</button></h3>
   <label class="l">誰在說？</label>
-  <input id="rName" placeholder="例如：小明、外孫女、全家" value="${esc(isCloud(cur)&&!isOwner(cur)?(recentNames()[0]||''):'')}">
+  <input id="rName" placeholder="例如：小明、外孫女、全家" value="${esc(opt.name!=null&&opt.name!==''?opt.name:(isCloud(cur)&&!isOwner(cur)?(recentNames()[0]||''):''))}">
   <div class="chips">${names.map(n=>`<button class="chip" data-act="nameChip">${esc(n)}</button>`).join('')}</div>
   <label class="l">不知道說什麼？點一下當提詞</label>
   <div class="chips tips">${o.tips.map(t=>`<button class="chip" data-act="tip">${esc(t)}</button>`).join('')}</div>
@@ -588,6 +656,7 @@ ACT.recSave=async(_,btn)=>{
 /* ---------- Sheet ---------- */
 function openSheet(){$('sheet').classList.remove('hidden')}
 function closeSheet(){
+  if(VM)cancelVideo();
   if(R){if(R.state==='rec'&&R.mr){R.mr.onstop=null;try{R.mr.stop()}catch(e){}}clearInterval(R.cdTimer);cancelAnimationFrame(R.raf);cleanupStream();if(R.prevURL)URL.revokeObjectURL(R.prevURL);R=null}
   $('sheet').classList.add('hidden');
 }
@@ -664,6 +733,194 @@ ACT.shareFile=async()=>{
   else toast('此裝置無法直接分享，請用「下載檔案」');
 };
 
+/* ---------- 一鍵送出：圖卡 / LINE 連結 / 祝福影片 ---------- */
+const FONT='"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+const CW=720,CH=1280;
+let VM=null;  // 影片製作中的狀態
+function loadCover(a){return new Promise(res=>{const u=photoURL(a);if(!u)return res(null);const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=u})}
+function wrapLines(g,text,maxW,maxLines){
+  const out=[];let line='';
+  for(const ch of Array.from(String(text||''))){
+    if(ch==='\n'){out.push(line);line='';continue}
+    if(g.measureText(line+ch).width>maxW&&line){out.push(line);line=ch}else line+=ch;
+  }
+  if(line)out.push(line);
+  if(out.length>maxLines){out.length=maxLines;out[maxLines-1]=out[maxLines-1].slice(0,-1)+'…'}
+  return out;
+}
+function rrect(g,x,y,w,h,r){g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else g.rect(x,y,w,h);g.fill()}
+function giftURL(a){return API+'/g/'+a.cloud.id}
+function sendText(a){
+  const n=clips.length,o=OCC[a.occ]||OCC.custom;
+  return o.e+' '+a.title+'\n'+(a.occ==='travel'?n+' 段大家的回憶，點開來聽 🎙️':(a.to?a.to+'，':'')+n+' 位親友錄了祝福給你，點開來聽 🎙️')+'\n'+giftURL(a);
+}
+/* 畫一格畫面：phase = card | intro | clip | outro */
+function drawFrame(g,S){
+  const a=S.a,o=OCC[a.occ]||OCC.custom,W=CW,H=CH;
+  g.save();g.shadowBlur=0;g.globalAlpha=1;
+  if(S.img){const s=Math.max(W/S.img.width,H/S.img.height),w=S.img.width*s,h=S.img.height*s;g.drawImage(S.img,(W-w)/2,(H-h)/2,w,h)}
+  else{const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,o.c);bg.addColorStop(1,'#2a1820');g.fillStyle=bg;g.fillRect(0,0,W,H);
+    g.font='260px '+FONT;g.textAlign='center';g.textBaseline='middle';g.fillText(o.e,W/2,H*0.3)}
+  const sh=g.createLinearGradient(0,H*0.42,0,H);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(.45,'rgba(0,0,0,.45)');sh.addColorStop(1,'rgba(0,0,0,.8)');
+  g.fillStyle=sh;g.fillRect(0,H*0.42,W,H*0.58);
+  g.textAlign='center';g.textBaseline='alphabetic';g.fillStyle='#fff';g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=14;
+  const names=[...new Set(clips.map(c=>c.name).filter(n=>n&&n!=='匿名'))];
+  if(S.phase==='card'||S.phase==='intro'||S.phase==='outro'){
+    let y=H*0.66;
+    g.font='96px '+FONT;g.fillText(o.e,W/2,y);y+=96;
+    g.font='bold 62px '+FONT;
+    wrapLines(g,S.phase==='outro'&&a.occ!=='travel'?a.title+'！':a.title,W-110,2).forEach(l=>{g.fillText(l,W/2,y);y+=78});
+    g.font='34px '+FONT;g.globalAlpha=.95;
+    if(S.phase==='outro'){
+      y+=6;wrapLines(g,names.length?'來自：'+names.join('、'):'來自大家的祝福',W-120,3).forEach(l=>{g.fillText(l,W/2,y);y+=48});
+    }else{
+      if(a.to&&a.occ!=='travel'){g.fillText('給 '+a.to,W/2,y);y+=52}
+      g.fillText(clips.length+(a.occ==='travel'?' 段大家的回憶':' 位親友的祝福')+'  🎙️',W/2,y);
+    }
+  }else if(S.phase==='clip'){
+    const c=S.clip,lv=S.levels||[];
+    // 聲波愛心條（跟 App 圖示同一個語彙）
+    g.shadowBlur=0;
+    const N=11,bw=22,gap=16,x0=W/2-(N*bw+(N-1)*gap)/2,base=H*0.6;
+    const grad=g.createLinearGradient(x0,0,x0+N*(bw+gap),0);grad.addColorStop(0,'#ffb35c');grad.addColorStop(.5,'#ff5f7a');grad.addColorStop(1,'#c77dff');
+    g.fillStyle=grad;
+    for(let i=0;i<N;i++){const d=Math.abs(i-(N-1)/2),shape=1-d/((N-1)/2)*0.55,v=lv[i]||0;
+      const h=Math.max(bw,(40+v*190)*shape);rrect(g,x0+i*(bw+gap),base-h/2,bw,h,bw/2)}
+    g.fillStyle='#fff';g.shadowBlur=14;
+    let y=H*0.77;
+    g.font='bold 84px '+FONT;g.fillText(c.name||'匿名',W/2,y);y+=74;
+    if(c.note){g.font='38px '+FONT;wrapLines(g,c.note,W-110,3).forEach(l=>{g.fillText(l,W/2,y);y+=54})}
+    g.shadowBlur=0;
+    const bx=110,bwid=W-220,by=H*0.935;
+    g.fillStyle='rgba(255,255,255,.3)';rrect(g,bx,by,bwid,8,4);
+    g.fillStyle='#fff';rrect(g,bx,by,Math.max(8,bwid*Math.min(1,S.prog||0)),8,4);
+    g.font='28px '+FONT;g.globalAlpha=.85;g.fillText((S.idx+1)+' / '+S.total,W/2,by+50);
+  }
+  g.shadowBlur=0;g.globalAlpha=.6;g.font='24px '+FONT;g.textAlign='right';g.fillStyle='#fff';g.fillText('🎙️ 齊聲祝福',W-28,H-28);
+  g.restore();
+}
+async function drawCardTo(cv){cv.width=CW;cv.height=CH;const img=await loadCover(cur);drawFrame(cv.getContext('2d'),{a:cur,img,phase:'card'});return img}
+
+ACT.send=async()=>{
+  const a=cur,cl=isCloud(a),pend=clips.filter(c=>!c.cloudId).length;
+  const total=2.5+clips.reduce((s,c)=>s+(c.duration||0)+0.6,0)+3;
+  const lineURL='https://line.me/R/share?text='+encodeURIComponent(cl?sendText(a):'');
+  $('sheetBody').innerHTML=`<h3>🎁 ${a.occ==='travel'?'分享這份回憶':'送給'+esc(a.to||'對方')}<button class="x" data-act="closeSheet">✕</button></h3>
+  <canvas class="cardpv" id="cardCv"></canvas>
+  ${cl?`<a class="save line" href="${esc(lineURL)}" target="_blank" rel="noopener">💬 用 LINE 傳祝福卡</a>
+      <p class="hint">對方點開就看到這張圖卡，可以一段一段聽大家的聲音${pend?`<br><b style="color:var(--accent)">還有 ${pend} 段沒上傳，對方會聽不到，請先連上網路</b>`:''}</p>`
+    :`<button class="save line" data-act="enableCloud" data-arg="send">💬 開啟雲端，用 LINE 傳祝福卡</button>
+      <p class="hint">需要先把聲音放上雲端，對方才聽得到</p>`}
+  <button class="save dark" data-act="makeVideo">🎬 製作祝福影片（圖卡＋聲音）</button>
+  <p class="hint">約 ${fmt(total)} 的影片，LINE 裡直接播放；製作時請保持畫面開啟</p>
+  <button class="save ghost" data-act="shareCard">🖼 只傳圖卡</button>`;
+  openSheet();
+  drawCardTo($('cardCv'));
+  if(cl&&pend)syncAlbum(a);
+};
+ACT.shareCard=async()=>{
+  const cv=document.createElement('canvas');await drawCardTo(cv);
+  cv.toBlob(async b=>{
+    if(!b){toast('圖卡產生失敗');return}
+    const f=new File([b],(cur.title||'祝福卡').replace(/[\\/:*?"<>|]/g,'')+'.png',{type:'image/png'});
+    showResult(f,'image');
+  },'image/png');
+};
+function pickVideoMime(){
+  if(!window.MediaRecorder||!MediaRecorder.isTypeSupported)return'';
+  // H.264 + AAC 的 MP4 在 LINE / iPhone / Android 都能直接播；Safari 只認得 'video/mp4'（實際就是 H.264）
+  for(const t of['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.4D401F,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc3,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'])
+    if(MediaRecorder.isTypeSupported(t))return t;
+  return'';
+}
+ACT.makeVideo=async()=>{
+  const a=cur;
+  const probe=document.createElement('canvas');
+  if(!probe.captureStream||!window.MediaRecorder||!pickVideoMime()){toast('這台裝置不支援製作影片，請改用「用 LINE 傳祝福卡」',4000);return}
+  await ensureAll(a);
+  const list=clips.filter(c=>c.data);
+  if(!list.length){toast('沒有可以用的聲音');return}
+  $('sheetBody').innerHTML=`<h3>🎬 製作祝福影片<button class="x" data-act="closeSheet">✕</button></h3>
+    <canvas class="cardpv" id="vidCv"></canvas>
+    <div class="vbar"><i id="vBar"></i></div>
+    <div class="vprog" id="vTxt">準備中…</div>
+    <p class="hint">影片會即時錄製，請保持畫面開啟、不要切換 App</p>
+    <button class="save ghost" data-act="closeSheet">取消</button>`;
+  openSheet();
+  try{
+    const f=await renderVideo(a,list,$('vidCv'),(t,T)=>{$('vBar').style.width=Math.min(100,t/T*100)+'%';$('vTxt').textContent=fmt(t)+' / '+fmt(T)});
+    if(f)showResult(f,'video');
+  }catch(e){console.error(e);toast('影片製作失敗：'+(e.message||e),4000)}
+};
+async function renderVideo(a,list,cv,onProg){
+  const ctx=getCtx(),bufs=[];
+  for(const c of list){try{const b=await decode(ctx,c.data.slice(0));let pk=0;
+    for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i+=4){const x=Math.abs(d[i]);if(x>pk)pk=x}}
+    bufs.push({c,b,gain:pk>0.01?Math.min(3,0.85/pk):1})}catch(e){console.warn('skip',c.name,e)}}
+  if(!bufs.length)throw new Error('聲音無法解碼');
+  const INTRO=2.5,GAP=0.6,OUTRO=3;
+  const segs=[];let t=INTRO;
+  bufs.forEach((x,i)=>{segs.push({s:t,e:t+x.b.duration,i,x});t+=x.b.duration+GAP});
+  const T=t-GAP+OUTRO;
+  cv.width=CW;cv.height=CH;const g=cv.getContext('2d'),img=await loadCover(a);
+  const dest=ctx.createMediaStreamDestination(),mix=ctx.createGain(),an=ctx.createAnalyser(),mute=ctx.createGain();
+  an.fftSize=64;mute.gain.value=0;mix.connect(dest);mix.connect(an);an.connect(mute);mute.connect(ctx.destination);
+  const fd=new Uint8Array(an.frequencyBinCount);
+  const mime=pickVideoMime();
+  const stream=new MediaStream(cv.captureStream(30).getVideoTracks().concat(dest.stream.getAudioTracks()));
+  let rec;try{rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2000000,audioBitsPerSecond:128000})}catch(e){rec=new MediaRecorder(stream)}
+  const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  let wake=null;try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(e){}
+  drawFrame(g,{a,img,phase:'intro'});
+  const t0=ctx.currentTime+0.3,srcs=[];
+  segs.forEach(sg=>{const s=ctx.createBufferSource(),gn=ctx.createGain();s.buffer=sg.x.b;gn.gain.value=sg.x.gain;s.connect(gn);gn.connect(mix);s.start(t0+sg.s);srcs.push(s)});
+  rec.start(1000);
+  VM={rec,srcs,cancelled:false};
+  return new Promise((res,rej)=>{
+    const cleanup=()=>{clearInterval(timer);srcs.forEach(s=>{try{s.stop()}catch(e){}});try{mix.disconnect();an.disconnect();mute.disconnect()}catch(e){}
+      stream.getTracks().forEach(tr=>tr.stop());if(wake)try{wake.release()}catch(e){}};
+    rec.onstop=()=>{const cancelled=VM&&VM.cancelled;cleanup();VM=null;
+      if(cancelled)return res(null);
+      const type=(rec.mimeType||mime||'video/mp4').split(';')[0],ext=type.indexOf('mp4')>=0?'mp4':'webm';
+      const blob=new Blob(chunks,{type});
+      if(!blob.size)return rej(new Error('沒有錄到畫面'));
+      res(new File([blob],(a.title||'祝福').replace(/[\\/:*?"<>|]/g,'')+'.'+ext,{type}))};
+    rec.onerror=e=>{cleanup();VM=null;rej(e.error||new Error('錄製錯誤'))};
+    const timer=setInterval(()=>{
+      const el=ctx.currentTime-t0;
+      if(el>=T){clearInterval(timer);try{rec.stop()}catch(e){}return}
+      let S={a,img,phase:el<INTRO?'intro':'outro'};
+      for(const sg of segs){if(el>=sg.s-0.15&&el<sg.e+GAP*0.8){
+        an.getByteFrequencyData(fd);
+        const lv=[];for(let i=0;i<11;i++){lv.push((fd[[5,3,2,1,1,0,1,1,2,3,5][i]+1]||0)/255)}
+        S={a,img,phase:'clip',clip:sg.x.c,idx:sg.i,total:segs.length,prog:Math.max(0,(el-sg.s)/(sg.e-sg.s)),levels:lv};break}}
+      if(S.phase!=='clip'&&el>=INTRO)S.phase=el>segs[segs.length-1].e?'outro':'clip-gap';
+      if(S.phase==='clip-gap'){const nx=segs.find(sg=>sg.s>el);S=nx?{a,img,phase:'clip',clip:nx.x.c,idx:nx.i,total:segs.length,prog:0,levels:[]}:{a,img,phase:'outro'}}
+      drawFrame(g,S);onProg(Math.max(0,el),T);
+    },1000/30);
+  });
+}
+function cancelVideo(){if(VM&&VM.rec){VM.cancelled=true;try{VM.rec.stop()}catch(e){}}}
+let lastResult=null;
+function showResult(file,kind){
+  lastResult=file;
+  const u=URL.createObjectURL(file),isV=kind==='video';
+  $('sheetBody').innerHTML=`<h3>${isV?'🎬 祝福影片完成':'🖼 祝福圖卡'}<button class="x" data-act="closeSheet">✕</button></h3>
+    ${isV?`<video class="pv" src="${u}" controls playsinline></video>`:`<img class="cardpv" src="${u}" alt="">`}
+    <p class="hint">${esc(file.name)}・${(file.size/1048576).toFixed(1)} MB</p>
+    <button class="save line" data-act="shareResult">💬 分享到 LINE</button>
+    <p class="hint">在分享選單裡點「LINE」，再選${cur&&cur.to&&cur.occ!=='travel'?esc(cur.to):'要傳的人或群組'}</p>
+    <a class="save dark" href="${u}" download="${esc(file.name)}">${isV?'儲存影片':'儲存圖卡'}</a>
+    <button class="save ghost" data-act="send">← 返回</button>`;
+  openSheet();
+}
+ACT.shareResult=async()=>{
+  const f=lastResult;if(!f)return;
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    try{await navigator.share({files:[f],title:cur?cur.title:''})}catch(e){if(e&&e.name!=='AbortError')toast('分享失敗：'+e.message,3000)}
+  }else toast('這台裝置無法直接分享檔案，請先「儲存」，再到 LINE 傳送',4000);
+};
+
 /* ---------- PWA manifest（圖示用絕對網址，blob manifest 才找得到） ---------- */
 (function(){try{
   const abs=f=>new URL(f,location.href.split(/[?#]/)[0]).href;
@@ -672,7 +929,7 @@ ACT.shareFile=async()=>{
   $('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}))}catch(e){}})();
 
 openDB().then(d=>{db=d;return loadAlbums()})
-  .then(async()=>{if(!(await handleJoin()))renderHome()})
+  .then(async()=>{if(!(await handleGift())&&!(await handleJoin()))renderHome()})
   .catch(e=>{console.error(e);$('app').innerHTML='<div class="empty">無法開啟儲存空間（請勿使用無痕模式）</div>'});
 </script>
 </body>

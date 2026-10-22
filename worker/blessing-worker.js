@@ -28,6 +28,8 @@
  *   POST   /a/:id/c                  上傳錄音（原始內容；X-Name、X-Note 用 encodeURIComponent，X-Dur 秒數）→ {id, token, t}
  *   GET    /a/:id/c/:cid             下載錄音
  *   DELETE /a/:id/c/:cid  [X-Key 或 X-Token]
+ *   GET    /g/:id                    祝福卡分享頁（LINE 預覽圖 → 轉到前端 ?g=:id 收禮畫面）
+ *                                    前端網址可用環境變數 BLESSING_APP 覆寫
  */
 
 const OCCS = ['birthday', 'mother', 'father', 'elder', 'newyear', 'midautumn', 'travel', 'custom'];
@@ -99,6 +101,34 @@ export async function handleBlessing(req, env, path) {
   const m = req.method;
   const seg = path.split('/').filter(Boolean);
   try {
+    // 祝福卡分享頁：給 LINE 抓預覽圖（og:image = 封面），再轉到前端的收禮畫面
+    if (seg[0] === 'g' && seg.length === 2 && m === 'GET') {
+      const gid = seg[1];
+      const graw = /^[a-z0-9]{6,16}$/.test(gid) ? await kv.get('a:' + gid) : null;
+      const app = env.BLESSING_APP || 'https://kftseng2oo1.github.io/blessing/';
+      if (!graw) return Response.redirect(app, 302);
+      const g = JSON.parse(graw);
+      const n = (await listClips(kv, gid)).length;
+      const origin = new URL(req.url).origin;
+      const h = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const to = g.to ? (g.occ === 'travel' ? g.to : '給 ' + g.to) : '';
+      const title = h(g.title + (to && g.occ !== 'travel' && g.title.indexOf(g.to) < 0 ? '・' + to : ''));
+      const desc = h(n + ' 位親友錄了祝福' + (g.occ === 'travel' ? '，一起回味這趟旅程' : '給你') + '，點開來聽 🎙️');
+      const img = g.photoVer ? origin + '/blessing/a/' + gid + '/photo?v=' + g.photoVer : app + 'icon-512.png';
+      const dest = h(app + '?g=' + gid);
+      const html = '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>' + title + '</title>' +
+        '<meta property="og:type" content="website"><meta property="og:site_name" content="齊聲祝福">' +
+        '<meta property="og:title" content="' + title + '"><meta property="og:description" content="' + desc + '">' +
+        '<meta property="og:image" content="' + h(img) + '"><meta name="twitter:card" content="summary_large_image">' +
+        '<meta http-equiv="refresh" content="0;url=' + dest + '">' +
+        '</head><body style="font-family:sans-serif;text-align:center;padding:40px;background:#f6efe4">' +
+        '<p>正在打開祝福…</p><p><a href="' + dest + '">沒有自動打開請點這裡</a></p>' +
+        '<script>location.replace(' + JSON.stringify(app + '?g=' + gid) + ')</script></body></html>';
+      return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
+    }
+
     if (seg[0] !== 'a') return err('not found', 404);
 
     // 建立祝福冊
