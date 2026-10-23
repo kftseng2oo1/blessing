@@ -116,6 +116,10 @@ details.own summary{color:var(--sub);cursor:pointer}
 .dlg-btns button.ok.danger{background:#b33}
 #toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center}
 #toast.on{opacity:1}
+.seg{display:flex;background:var(--line);border-radius:14px;padding:4px;gap:4px;margin-bottom:4px}
+.seg button{flex:1;padding:11px 6px;border-radius:11px;font-weight:700;font-size:15px;color:var(--sub)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn.line,.save.line{background:#06c755;color:#fff;border-color:#06c755}
 .btn.sendbtn{background:linear-gradient(90deg,#ff9f5a,#ff5f7a 55%,#c77dff);color:#fff;border:0;font-size:16px;padding:14px}
 .hint{color:var(--sub);font-size:13px;margin:6px 2px 0;line-height:1.5;text-align:center}
@@ -248,9 +252,15 @@ function cloudMeta(a,extra){
     body:JSON.stringify(Object.assign({occ:a.occ,to:a.to,title:a.title,date:a.date},extra||{}))});
 }
 async function uploadClip(a,c){
-  const r=await api('/a/'+a.cloud.id+'/c',{method:'POST',headers:{
-    'Content-Type':c.mime||'audio/mp4','X-Name':encodeURIComponent(c.name||''),'X-Note':encodeURIComponent(c.note||''),
-    'X-Dur':String(Math.round((c.duration||0)*10)/10)},body:clipBlob(c)});
+  const h={'Content-Type':c.mime||'audio/mp4','X-Name':encodeURIComponent(c.name||''),'X-Note':encodeURIComponent(c.note||''),
+    'X-Dur':String(Math.round((c.duration||0)*10)/10)};
+  let r;
+  if(c.tts){
+    // 舊版 arcar 的 CORS 不認得 X-Tts，預檢失敗時改用不帶旁白標記的方式上傳
+    try{r=await api('/a/'+a.cloud.id+'/c',{method:'POST',headers:Object.assign({'X-Tts':c.tts},h),body:clipBlob(c)})}
+    catch(e){if(!(e instanceof TypeError))throw e}
+  }
+  if(!r)r=await api('/a/'+a.cloud.id+'/c',{method:'POST',headers:h,body:clipBlob(c)});
   const j=await r.json();
   c.cloudId=j.id;c.token=j.token;c.upAt=Date.now();c.pending=false;
   await put('clips',c);return c;
@@ -281,7 +291,7 @@ async function syncAlbum(a){
       seen.add(s.id);
       let c=byC.get(s.id);
       if(!c)c={id:uid(),albumId:a.id,cloudId:s.id,data:null,createdAt:s.t};
-      Object.assign(c,{name:s.name,note:s.note,duration:s.dur,mime:s.mime});
+      Object.assign(c,{name:s.name,note:s.note,duration:s.dur,mime:s.mime},s.tts?{tts:s.tts}:{});
       list.push(c);
     });
     local.forEach(c=>{
@@ -403,7 +413,7 @@ function renderAlbum(){
   const a=cur,o=OCC[a.occ]||OCC.custom,p=photoURL(a),cl=isCloud(a),own=isOwner(a);
   const total=clips.reduce((s,c)=>s+(c.duration||0),0),mine=clips.some(c=>c.token);
   let banner='';
-  if(cl&&!own&&!mine)banner+=`<div class="banner">🎁 你受邀為「${esc(a.title)}」錄一段話！按下方「錄一段祝福」開始，錄好之後大家都聽得到。</div>`;
+  if(cl&&!own&&!mine)banner+=`<div class="banner">🎁 你受邀為「${esc(a.title)}」錄一段話！按下方「留一段祝福」，可以錄音，也可以打字請旁白幫你念，留好之後大家都聽得到。</div>`;
   if(IN_LINE)banner+=`<div class="banner">目前是在 LINE 裡開啟。如果無法錄音，請點右上角「⋯」選「以預設瀏覽器開啟」。</div>`;
   $('app').innerHTML=`<div class="hero" style="background-color:${o.c};${p?`background-image:url(${p})`:''}">
     <div class="row"><button class="ib" data-act="back">‹</button>
@@ -424,14 +434,14 @@ function renderAlbum(){
       const canDel=!cl||own||!!c.token;
       return `<div class="clip">
       <div class="av" style="background:${colorOf(c.name)}">${esc((c.name||'?').slice(0,1))}</div>
-      <div class="mid"><b>${esc(c.name||'匿名')}${c.token&&!own?'（我）':''}</b><small>${fmt(c.duration)}${cl&&!c.cloudId?'・<span class="pend">待上傳</span>':''}${c.note?'・'+esc(c.note):''}</small></div>
+      <div class="mid"><b>${esc(c.name||'匿名')}${c.token&&!own?'（我）':''}</b><small>${c.tts?'🔈 旁白・':''}${fmt(c.duration)}${cl&&!c.cloudId?'・<span class="pend">待上傳</span>':''}${c.note?'・'+esc(c.note):''}</small></div>
       <button class="mini play" data-act="play" data-arg="${i}">▶</button>
       ${own?`<button class="mini" data-act="move" data-arg="${i},-1" ${i?'':'disabled'}>↑</button>
       <button class="mini" data-act="move" data-arg="${i},1" ${i<clips.length-1?'':'disabled'}>↓</button>`:''}
       ${canDel?`<button class="mini" data-act="removeClip" data-arg="${i}">🗑</button>`:''}</div>`}).join('')
       :`<div class="empty">還沒有人錄音<br>${cl?'把邀請連結傳給大家，或':''}按下方按鈕，把手機傳給每個人輪流錄吧！</div>`}
   </div>
-  <button class="fab" data-act="record">🎙 錄一段祝福</button>`;
+  <button class="fab" data-act="record">🎙 留一段祝福</button>`;
 }
 ACT.sync=()=>syncAlbum(cur);
 async function syncCount(){cur.count=clips.length;await put('albums',cur)}
@@ -531,7 +541,7 @@ async function handleGift(){
     if(m.photoVer){try{a.photo=await (await api('/a/'+gid+'/photo')).arrayBuffer()}catch(e){}}
     const ord=m.order||[],rank=s=>{const i=ord.indexOf(s.id);return i<0?1e6:i};
     const list=j.clips.slice().sort((x,y)=>rank(x)-rank(y)||x.t-y.t)
-      .map(s=>({id:'g'+s.id,cloudId:s.id,name:s.name,note:s.note,duration:s.dur,mime:s.mime,data:null,transient:true}));
+      .map(s=>({id:'g'+s.id,cloudId:s.id,name:s.name,note:s.note,duration:s.dur,mime:s.mime,tts:s.tts||'',data:null,transient:true}));
     G={a,clips:list};renderGift();
   }catch(e){
     $('app').innerHTML='<div class="empty"><div class="big">😢</div>這份祝福打不開<br>'+esc(e.message)+'</div>';
@@ -571,12 +581,28 @@ function openRecorder(opt){
   opt=opt||{};
   const o=Object.assign({},OCC[cur.occ]||OCC.custom);if(opt.tips)o.tips=opt.tips;
   const names=['全體一起'].concat(recentNames().filter(n=>n!=='全體一起')).slice(0,10);
-  $('sheetBody').innerHTML=`<h3>錄一段祝福<button class="x" data-act="closeSheet">✕</button></h3>
-  <label class="l">誰在說？</label>
+  const mode=(()=>{try{return localStorage.getItem('qs-mode')==='tts'?'tts':'rec'}catch(e){return'rec'}})();
+  $('sheetBody').innerHTML=`<h3>留一段祝福<button class="x" data-act="closeSheet">✕</button></h3>
+  <div class="seg"><button data-act="recMode" data-arg="rec" id="segRec">🎙 錄音</button><button data-act="recMode" data-arg="tts" id="segTts">✍️ 打字，旁白念</button></div>
+  <label class="l">誰的祝福？</label>
   <input id="rName" placeholder="例如：小明、外孫女、全家" value="${esc(opt.name!=null&&opt.name!==''?opt.name:(isCloud(cur)&&!isOwner(cur)?(recentNames()[0]||''):''))}">
   <div class="chips">${names.map(n=>`<button class="chip" data-act="nameChip">${esc(n)}</button>`).join('')}</div>
-  <label class="l">不知道說什麼？點一下當提詞</label>
+  <label class="l">不知道說什麼？點一下${'<span class="mRec">當提詞</span><span class="mTts">加進去</span>'}</label>
   <div class="chips tips">${o.tips.map(t=>`<button class="chip" data-act="tip">${esc(t)}</button>`).join('')}</div>
+  <div class="mTts">
+    <label class="l">想說的祝福</label>
+    <textarea id="tText" maxlength="200" placeholder="例如：生日快樂！祝你身體健康，天天開心！"></textarea>
+    <label class="l">旁白聲音</label>
+    <div class="chips" id="tVoice">${TTS_VOICES.map((v,i)=>`<button class="chip${i===ttsVoicePref()?' on':''}" data-act="ttsVoice" data-arg="${v.k}">${v.n}</button>`).join('')}</div>
+    <label class="chk"><input type="checkbox" id="tSay" checked> 旁白先念名字（「小明說：…」）</label>
+    <div id="ttsGo"><button class="save dark" data-act="ttsMake">🔊 產生旁白試聽</button></div>
+    <div id="ttsDone" style="display:none">
+      <audio class="pv" id="ttsPrev" controls playsinline></audio>
+      <div class="row2"><button style="background:var(--line)" data-act="ttsMake">重新產生</button>
+      <button style="background:var(--accent);color:#fff" data-act="recSave">儲存這段</button></div>
+    </div>
+  </div>
+  <div class="mRec">
   <label class="chk"><input type="checkbox" id="rCd" checked> 開錄前倒數 3 秒（適合大家一起說）</label>
   <div class="recbox" id="recBox">
     <button class="recbtn" id="recBtn" data-act="recToggle">開始</button>
@@ -589,11 +615,57 @@ function openRecorder(opt){
     <button style="background:var(--accent);color:#fff" data-act="recSave">儲存這段</button></div>
   </div>
   <label class="l">文字留言（選填，播放時會顯示）</label>
-  <textarea id="rNote" placeholder="想寫下的話…"></textarea>`;
-  R={state:'idle'};openSheet();
+  <textarea id="rNote" placeholder="想寫下的話…"></textarea>
+  </div>`;
+  R={state:'idle',mode};setRecMode(mode);openSheet();
 }
+/* ---------- 打字 → 旁白配音（arcar /tts，台灣口音） ---------- */
+const TTS_URL=API.replace(/\/blessing\/?$/,'/tts');
+const TTS_VOICES=[{k:'female',n:'👩 溫柔女聲'},{k:'female2',n:'👧 活潑女聲'},{k:'male',n:'👨 沉穩男聲'}];
+function ttsVoicePref(){try{const k=localStorage.getItem('qs-voice');const i=TTS_VOICES.findIndex(v=>v.k===k);return i<0?0:i}catch(e){return 0}}
+function setRecMode(m){
+  if(!R)return;
+  R.mode=m;try{localStorage.setItem('qs-mode',m)}catch(e){}
+  $('segRec').classList.toggle('on',m==='rec');$('segTts').classList.toggle('on',m==='tts');
+  document.querySelectorAll('#sheetBody .mRec').forEach(el=>el.style.display=m==='rec'?'':'none');
+  document.querySelectorAll('#sheetBody .mTts').forEach(el=>el.style.display=m==='tts'?'':'none');
+}
+ACT.recMode=m=>{
+  if(R&&(R.state==='rec'||R.state==='cd'||R.state==='stopping')){toast('錄音中，先停止再切換');return}
+  setRecMode(m);if(m==='tts')setTimeout(()=>$('tText').focus(),50);
+};
+ACT.ttsVoice=k=>{
+  document.querySelectorAll('#tVoice .chip').forEach(b=>b.classList.toggle('on',b.dataset.arg===k));
+  try{localStorage.setItem('qs-voice',k)}catch(e){}
+};
+function ttsSpoken(){
+  const t=$('tText').value.trim(),n=$('rName').value.trim();
+  return ($('tSay').checked&&n&&n!=='匿名'?n+'說：':'')+t;
+}
+function ttsVoiceSel(){const b=document.querySelector('#tVoice .chip.on');return b?b.dataset.arg:'female'}
+async function makeTTS(){
+  const text=ttsSpoken(),voice=ttsVoiceSel();
+  if(!$('tText').value.trim()){toast('先寫下想說的祝福');$('tText').focus();return false}
+  toast('旁白配音中…',20000);
+  try{
+    const r=await fetch(TTS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voice,rate:-5})});
+    if(!r.ok){let m='';try{m=(await r.json()).error}catch(e){}throw new Error(m||('配音失敗 '+r.status))}
+    const blob=await r.blob();
+    if(!blob.size)throw new Error('沒有收到聲音');
+    let dur=0;try{dur=(await decode(getCtx(),await blob.arrayBuffer())).duration}catch(e){}
+    if(!R)return false;
+    if(R.prevURL)URL.revokeObjectURL(R.prevURL);
+    R.blob=new Blob([blob],{type:(blob.type||'audio/mpeg').split(';')[0]});R.dur=dur;R.tts=voice;R.ttsKey=voice+'|'+text;R.state='done';
+    R.prevURL=URL.createObjectURL(R.blob);
+    $('ttsGo').style.display='none';$('ttsDone').style.display='block';$('ttsPrev').src=R.prevURL;
+    hideToast();
+    try{const p=$('ttsPrev').play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+    return true;
+  }catch(e){toast('旁白配音失敗：'+e.message+'，請稍後再試',4000);return false}
+}
+ACT.ttsMake=(_,btn)=>{btn.disabled=true;makeTTS().finally(()=>{btn.disabled=false})};
 ACT.nameChip=(_,el)=>{$('rName').value=el.textContent};
-ACT.tip=(_,el)=>{const n=$('rNote');n.value=n.value?n.value+'，'+el.textContent:el.textContent};
+ACT.tip=(_,el)=>{const n=R&&R.mode==='tts'?$('tText'):$('rNote');n.value=n.value?n.value+(/[，。！？!?,]$/.test(n.value)?'':'，')+el.textContent:el.textContent};
 ACT.recToggle=()=>{
   if(!R)return;
   if(R.state==='idle')return recStart();
@@ -637,13 +709,17 @@ function onRecStopped(){
   if(R.prevURL)URL.revokeObjectURL(R.prevURL);R.prevURL=URL.createObjectURL(R.blob);
   $('recBox').style.display='none';$('recDone').style.display='block';$('recPrev').src=R.prevURL;
 }
-ACT.recReset=()=>{if(R.prevURL)URL.revokeObjectURL(R.prevURL);R={state:'idle'};$('recDone').style.display='none';$('recBox').style.display='block';$('recPrev').removeAttribute('src');uiIdle()};
+ACT.recReset=()=>{if(R.prevURL)URL.revokeObjectURL(R.prevURL);R={state:'idle',mode:'rec'};$('recDone').style.display='none';$('recBox').style.display='block';$('recPrev').removeAttribute('src');uiIdle()};
 ACT.recSave=async(_,btn)=>{
-  if(!R||!R.blob||!R.blob.size){toast('沒有錄到聲音，請重錄');return}
+  const tts=R&&R.mode==='tts';
+  if(tts&&R.ttsKey!==ttsVoiceSel()+'|'+ttsSpoken()){       // 改過文字或聲音，自動重新配音
+    btn.disabled=true;const ok=await makeTTS();btn.disabled=false;if(!ok)return;
+  }
+  if(!R||!R.blob||!R.blob.size){toast(tts?'先產生旁白':'沒有錄到聲音，請重錄');return}
   btn.disabled=true;
   const a=cur,name=$('rName').value.trim()||'匿名';
-  const c={id:uid(),albumId:a.id,name,note:$('rNote').value.trim(),data:await new Response(R.blob).arrayBuffer(),mime:R.blob.type,
-    duration:R.dur||0,createdAt:Date.now(),order:clips.length?Math.max.apply(null,clips.map(x=>x.order))+1:0,pending:isCloud(a)};
+  const c={id:uid(),albumId:a.id,name,note:tts?$('tText').value.trim():$('rNote').value.trim(),data:await new Response(R.blob).arrayBuffer(),mime:R.blob.type,
+    duration:R.dur||0,createdAt:Date.now(),order:clips.length?Math.max.apply(null,clips.map(x=>x.order))+1:0,pending:isCloud(a),tts:tts?R.tts:''};
   await put('clips',c);clips.push(c);if(name!=='匿名')rememberName(name);
   await syncCount();closeSheet();renderAlbum();
   if(!isCloud(a)){toast('已收下 '+name+' 的祝福 🎉');return}

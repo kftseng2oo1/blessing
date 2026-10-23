@@ -41,7 +41,7 @@ const ALPHA = 'abcdefghjkmnpqrstuvwxyz23456789';
 export const BLESSING_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Key,X-Token,X-Name,X-Note,X-Dur',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Key,X-Token,X-Name,X-Note,X-Dur,X-Tts',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -83,7 +83,7 @@ async function listClips(kv, id) {
     const r = await kv.list({ prefix: pre, cursor });
     for (const k of r.keys) {
       const m = k.metadata || {};
-      out.push({ id: k.name.slice(pre.length), name: m.n || '匿名', note: m.o || '', dur: m.d || 0, mime: m.m || 'audio/mp4', t: m.t || 0 });
+      out.push({ id: k.name.slice(pre.length), name: m.n || '匿名', note: m.o || '', dur: m.d || 0, mime: m.m || 'audio/mp4', t: m.t || 0, tts: m.v || '' });
     }
     cursor = r.list_complete ? null : r.cursor;
   } while (cursor);
@@ -208,6 +208,8 @@ export async function handleBlessing(req, env, path) {
           m: str((req.headers.get('Content-Type') || 'audio/mp4').split(';')[0], 40),
           t: now
         };
+        const tv = req.headers.get('X-Tts');                 // 打字＋旁白配音的片段
+        if (['female', 'female2', 'male'].includes(tv)) meta.v = tv;
         while (new TextEncoder().encode(JSON.stringify(meta)).length > 1000 && meta.o) meta.o = meta.o.slice(0, -10);
         await kv.put('c:' + id + ':' + cid, buf, { metadata: meta });
         await kv.put('t:' + id + ':' + cid, await sha(token));
